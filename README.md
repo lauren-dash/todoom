@@ -2,7 +2,7 @@
   <img alt="TODOOM" src="template.svg" width="480">
 </p>
 
-# TODOOM
+# todoom
 
 <p align="center">
   <a href="https://studio.imbue.com/open?git_url=https://github.com/lauren-dash/todoom"><img alt="Open in Imbue Studio" height="64" src="https://img.shields.io/badge/Open%20in%20Imbue%20Studio-D8D1C0?style=for-the-badge"></a>
