@@ -11,7 +11,7 @@
 Didn't work? Create a Studio workspace and paste this to your agent:
 ` /use-template https://github.com/lauren-dash/todoom`
 
-## Why you care
+## what is todoom
 
 All your doom in one place.
 
@@ -21,7 +21,7 @@ Todoom finds all of it. Texts, email, Slack, Notion, Docs, WhatsApp: anything an
 
 Face it, check it off, and go touch grass.
 
-## How to use it
+## how to use it
 
 1. **Connect your accounts.** When you adopt the template, your agent asks for
    read access to the sources you want (Gmail, Slack, Google Docs, Notion, and
@@ -65,7 +65,7 @@ The first month on a busy set of accounts costs about $6 of Claude usage;
 after that each refresh reads only what's new since the last one and costs
 cents.
 
-## Ideas for making it yours
+## ideas for customizing
 
 - Add a source: a second Slack workspace, a shared team inbox, or GitHub issues
   assigned to you, each as one more fetcher in the skill.
@@ -79,7 +79,7 @@ cents.
   "recruiter emails are never tasks", by editing the rules prompt in
   `scripts/cot_judge.py`.
 
-## What this is
+## what is this
 
 This repository is a published **Imbue Studio template**: a clean, bootable
 snapshot of what an agent built, ready to adapt into your own. It is NOT the
