@@ -15,11 +15,11 @@ Didn't work? Create a Studio workspace and paste this to your agent:
 
 All your doom in one place.
 
-The things you owe people are scattered across your inbox, Slack threads, Docs
-comments, group texts and WhatsApp, and the ones that slip are the ones you
-never wrote down. TODOOM reads all of them for you and keeps one short list of
-what you still have to do, split into Personal and Work, each item linked back
-to the message it came from.
+Somewhere out there is a text where you said “yeah, I’ll take a look!” and meant it, briefly. There’s a Google Doc comment with your name on it, aging like milk. There’s a Slack thread where you promised to “circle back,” and you have not so much as circled in the general direction of back.
+
+Todoom finds all of it. Texts, email, Slack, Notion, Docs, WhatsApp: anything anyone has asked of you, dredged up and stacked into one doomlist.
+
+Face it, check it off, and go touch grass.
 
 ## How to use it
 
