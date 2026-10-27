@@ -1,0 +1,664 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>TODOOM</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script>if (localStorage.getItem("theme") === "light") document.documentElement.dataset.theme = "light";</script>
+<style>
+  /* HQ design system: monochrome, monospace, square corners, uppercase labels. */
+  @font-face { font-family: departureMono; src: url(/assets/departure-mono.woff2) format("woff2"); font-display: swap; }
+  /* Dark by default (the design system's dark palette). */
+  :root {
+    color-scheme: dark;
+    --fg: hsl(0 0% 95%); --bg: hsl(0 0% 8%); --muted: hsl(0 0% 60%); --dim: hsl(0 0% 60% / .7);
+    --line: hsl(0 0% 95% / .2); --border: hsl(0 0% 25%); --card: hsl(0 0% 12%); --secondary: hsl(0 0% 18%);
+    --green: hsl(120 100% 45%); --amber: hsl(45 100% 55%); --red: hsl(0 100% 55%);
+    --body: ui-monospace, SFMono-Regular, Menlo, monospace;
+    --disp: departureMono, ui-monospace, monospace;
+    --gutter: 24px;
+  }
+  html[data-theme="light"] {
+    color-scheme: light;
+    --fg: hsl(0 0% 0%); --bg: hsl(0 0% 100%); --muted: hsl(0 0% 40%); --dim: hsl(0 0% 40% / .7);
+    --line: hsl(0 0% 0% / .2); --border: hsl(0 0% 15%); --card: hsl(0 0% 98%); --secondary: hsl(0 0% 90%);
+    --green: hsl(120 100% 35%); --amber: hsl(45 100% 50%); --red: hsl(0 100% 45%);
+  }
+  * { box-sizing: border-box; border-radius: 0; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 14px/1.4 var(--body); font-feature-settings: "liga" 0; -webkit-font-smoothing: antialiased; }
+  button { font: inherit; color: inherit; }
+  .label { font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+
+  /* Top bar */
+  .shell { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 22px; padding: 14px var(--gutter) 10px; border-bottom: 2px solid var(--border); background: var(--bg); }
+  .wordmark { font-family: var(--disp); font-size: 22px; letter-spacing: .06em; }
+  .updated { margin-left: auto; color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .btn { border: 1px solid var(--line); background: none; padding: 0 10px; height: 26px; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; color: var(--fg); text-decoration: none; display: inline-flex; align-items: center; transition: border-color .15s; }
+  .btn:hover { border-color: var(--fg); }
+  .btn:disabled { cursor: default; color: var(--muted); border-color: var(--line); }
+  .btn.icon { width: 26px; padding: 0; justify-content: center; }
+  .tabs { display: none; gap: 18px; padding: 0 var(--gutter); border-bottom: 1px solid var(--line); height: 36px; align-items: center; }
+  .tab { background: none; border: 0; padding: 0 0 2px; cursor: pointer; color: var(--muted); }
+  .tab[aria-selected="true"] { color: var(--fg); box-shadow: inset 0 -2px 0 var(--fg); }
+
+  /* Two columns: Personal left, Work right. Narrow windows switch to tabs. */
+  .columns { display: grid; grid-template-columns: 1fr 1fr; }
+  .column { min-width: 0; }
+  .column + .column { border-left: 2px solid var(--line); }
+  .colhead { position: sticky; top: 60px; z-index: 5; display: flex; align-items: baseline; gap: 12px; padding: 14px var(--gutter) 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
+  .colhead h2 { margin: 0; font-family: var(--disp); font-weight: 400; font-size: 20px; letter-spacing: .04em; }
+  .colhead .n { color: var(--muted); }
+  @media (max-width: 860px) {
+    .tabs { display: flex; }
+    .columns { grid-template-columns: 1fr; }
+    .column + .column { border-left: 0; }
+    .colhead { display: none; }
+    body[data-tab="personal"] #col-work, body[data-tab="work"] #col-personal { display: none; }
+  }
+
+  ul { list-style: none; margin: 0; padding: 0; }
+  li.task { display: grid; grid-template-columns: 22px 1fr auto; gap: 4px 12px; padding: 14px var(--gutter); border-bottom: 1px solid var(--line); align-items: start; }
+  li.task input[type=checkbox] { appearance: none; width: 16px; height: 16px; margin: 1px 0 0; border: 2px solid var(--fg); background: var(--bg); cursor: pointer; display: grid; place-content: center; }
+  li.task input[type=checkbox]:checked { background: var(--fg); }
+  li.task input[type=checkbox]:checked::after { content: ""; width: 8px; height: 4px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+  li.task input[type=checkbox]:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  /* Checking a task off: the box pops, the check mark draws in, the title is struck through and the row fades. */
+  li.task { transition: opacity .45s ease; }
+  li.task .title { text-decoration: line-through; text-decoration-color: transparent; text-decoration-thickness: 2px; transition: text-decoration-color .3s ease .1s, color .3s ease .1s; }
+  li.task.completing { opacity: .35; }
+  li.task.completing .title { text-decoration-color: var(--dim); color: var(--dim); }
+  li.task.completing input[type=checkbox] { animation: check-pop .28s ease-out; }
+  li.task.completing input[type=checkbox]::after { animation: check-draw .22s ease-out .05s both; }
+  @keyframes check-pop { 0% { transform: scale(1); } 45% { transform: scale(1.3); } 100% { transform: scale(1); } }
+  @keyframes check-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+  @media (prefers-reduced-motion: reduce) { li.task, li.task .title { transition: none; } li.task.completing input[type=checkbox], li.task.completing input[type=checkbox]::after { animation: none; } }
+  .title { font-weight: 600; }
+  .why { color: var(--muted); font-size: 13px; margin-top: 2px; }
+  .meta { grid-column: 2 / 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 6px; font-size: 11px; color: var(--muted); }
+  .src { letter-spacing: .12em; text-transform: uppercase; font-size: 10px; }
+  .src b { color: var(--fg); font-weight: 600; }
+  .lnk { background: none; border: 0; padding: 0; cursor: pointer; color: var(--fg); font-size: 11px; text-decoration: none; box-shadow: inset 0 -1px 0 var(--line); transition: box-shadow .15s; }
+  .lnk:hover { box-shadow: inset 0 -1px 0 var(--fg); }
+  .due { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; border: 1px solid var(--fg); padding: 2px 6px; }
+  .due.soon { border-color: var(--red); color: var(--red); }
+  li.task.checked .title { text-decoration-color: var(--dim); color: var(--dim); transition: none; }
+  li.task.checked .why, li.task.checked .meta { opacity: .55; }
+  .clears { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
+  .done-head { padding: 18px var(--gutter) 8px; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .empty { padding: 36px var(--gutter); color: var(--muted); }
+  .notes { padding: 12px var(--gutter); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); font-weight: 600; }
+  .notes:empty { display: none; }
+  .flag { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid var(--line); padding: 1px 5px; }
+  .flag.warn { color: var(--amber); border-color: var(--amber); }
+  .add-row { padding: 10px var(--gutter); border-bottom: 1px solid var(--line); }
+  .live { outline: none; cursor: text; border-radius: 0; margin: 0 -4px; padding: 0 4px; }
+  .live:hover { background: var(--card); }
+  .live:focus { background: var(--card); box-shadow: inset 0 -1px 0 var(--fg); }
+  .why.live:empty:not(:focus)::before { content: attr(data-placeholder); color: var(--dim); opacity: 0; }
+  li.task:hover .why.live:empty::before, .live:empty:focus::before { content: attr(data-placeholder); color: var(--dim); opacity: 1; }
+  .title.live:empty::before { content: attr(data-placeholder); color: var(--dim); }
+  li.task.checked .live { pointer-events: none; }
+  .row-actions { display: inline-flex; gap: 14px; opacity: 0; transition: opacity .15s; }
+  li.task:hover .row-actions, li.task:focus-within .row-actions { opacity: 1; }
+  .lnk.danger { color: var(--red); }
+  .lnk.do-it { color: var(--green); box-shadow: inset 0 -1px 0 var(--green); }
+  .flag.agent { color: var(--green); border-color: var(--green); }
+  .delegate { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
+  .note-in { width: 100%; resize: vertical; font: inherit; font-size: 13px; color: var(--fg); background: var(--card); border: 1px solid var(--line); padding: 6px 8px; }
+  .note-in:focus { outline: none; border-color: var(--fg); }
+  .hint { font-size: 11px; color: var(--muted); }
+  .removed-row { padding: 12px var(--gutter); border-bottom: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 8px; }
+  .removed-head { display: flex; align-items: baseline; gap: 12px; }
+  .removed-title { color: var(--dim); text-decoration: line-through; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .removed-row .in { flex: 1; font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; }
+  .removed-row .in:focus { outline: none; border-color: var(--fg); }
+  .form-row { display: flex; gap: 8px; align-items: center; }
+  .due-wrap { position: relative; }
+  .due { background: none; cursor: pointer; font-family: inherit; color: var(--fg); }
+  .add-due { opacity: 0; border-color: var(--line); color: var(--muted); }
+  li.task:hover .add-due, .add-due:focus { opacity: 1; }
+  .date-picker { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+  .add-in { width: 100%; font: inherit; font-size: 13px; color: var(--fg); background: none; border: 0; padding: 4px 0; outline: none; }
+  .add-in::placeholder { color: var(--muted); }
+  .add-in:focus { box-shadow: inset 0 -1px 0 var(--fg); }
+  .also { margin-top: 14px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+
+  /* Original-message panel */
+  .scrim { position: fixed; inset: 0; background: hsl(0 0% 0% / .35); display: none; z-index: 20; }
+  .panel { position: fixed; top: 16px; right: 16px; bottom: 16px; z-index: 21; width: min(540px, calc(100vw - 32px)); background: var(--bg); border: 2px solid var(--fg); box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--fg) 18%, transparent); display: none; flex-direction: column; }
+  .open .scrim { display: block; } .open .panel { display: flex; }
+  .panel-head { display: flex; align-items: center; gap: 12px; height: 34px; padding: 0 10px 0 14px; border-bottom: 2px solid var(--fg); }
+  .panel-head .asof { margin-left: auto; color: var(--muted); }
+  .panel-main { padding: 16px 14px; overflow: auto; flex: 1; }
+  .panel h3 { margin: 0 0 14px; font-size: 15px; }
+  .rawbody { white-space: pre-wrap; font-size: 13px; border: 1px solid var(--line); background: var(--card); padding: 12px; }
+  .chat { display: flex; flex-direction: column; gap: 12px; }
+  .msg { max-width: 88%; } .msg.me { align-self: flex-end; text-align: right; }
+  .msg .who { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
+  .msg .bubble { display: inline-block; text-align: left; white-space: pre-wrap; border: 1px solid var(--line); background: var(--card); padding: 8px 10px; font-size: 13px; }
+  .msg.me .bubble { background: var(--secondary); }
+  .msg.this .bubble { border: 2px solid var(--fg); }
+  .panel-foot { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--line); }
+  .panel-foot[hidden] { display: none; }
+  details { margin-top: 16px; } summary { cursor: pointer; }
+  pre { font: 11px/1.4 var(--body); white-space: pre-wrap; word-break: break-word; color: var(--muted); }
+
+  /* Search: a box in the top bar filters both columns as you type. */
+  .search { position: relative; flex: 0 1 320px; min-width: 120px; display: flex; align-items: center; }
+  .search-in { width: 100%; height: 28px; font: inherit; font-size: 13px; color: var(--fg); background: var(--card); border: 1px solid var(--line); padding: 0 86px 0 8px; outline: none; }
+  .search-in:focus { border-color: var(--fg); }
+  .search-in::placeholder { color: var(--muted); }
+  .search-in::-webkit-search-cancel-button { display: none; }
+  .search .kbd { position: absolute; right: 6px; pointer-events: none; }
+  .search-in:not(:placeholder-shown) ~ .kbd { display: none; }
+  .search-clear { position: absolute; right: 4px; border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 4px; height: 24px; }
+  .search-in:placeholder-shown ~ .search-clear { display: none; }
+  .kbd { font-size: 10px; letter-spacing: .08em; color: var(--muted); border: 1px solid var(--line); padding: 1px 5px; white-space: nowrap; }
+  mark { background: none; color: inherit; box-shadow: inset 0 -2px 0 var(--amber); }
+  li.task.flash { animation: flash 1.4s ease-out; }
+  @keyframes flash { 0%, 30% { background: var(--secondary); } 100% { background: transparent; } }
+
+  /* Spotlight-style search (Option-Space): a box in the middle of the window,
+     results listed underneath as you type, arrow keys to move, Enter to jump. */
+  .spot-scrim { position: fixed; inset: 0; z-index: 30; background: hsl(0 0% 0% / .35); display: none; }
+  .spot { position: fixed; z-index: 31; top: 14vh; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 32px)); background: var(--bg); border: 2px solid var(--fg); box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--fg) 18%, transparent); display: none; flex-direction: column; max-height: 72vh; }
+  .spotting .spot-scrim { display: block; } .spotting .spot { display: flex; }
+  .spot-head { display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--line); }
+  .spot-in { flex: 1; height: 52px; font: inherit; font-size: 20px; color: var(--fg); background: none; border: 0; outline: none; }
+  .spot-in::placeholder { color: var(--muted); }
+  .spot-list { overflow: auto; }
+  .spot-list:empty { display: none; }
+  .spot-group { padding: 10px 14px 4px; color: var(--muted); }
+  .spot-item { display: grid; grid-template-columns: 1fr auto; gap: 2px 12px; padding: 8px 14px; cursor: pointer; border-left: 3px solid transparent; }
+  .spot-item[aria-selected="true"] { background: var(--secondary); border-left-color: var(--fg); }
+  .spot-item .st { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spot-item.done .st { text-decoration: line-through; color: var(--dim); }
+  .spot-item .sw { grid-column: 1 / 3; color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .spot-item .ss { color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
+  .spot-foot { display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
+  .spot-empty { padding: 16px 14px; color: var(--muted); }
+</style>
+</head>
+<body data-tab="personal">
+<header class="shell">
+  <span class="wordmark">TODOOM</span>
+  <label class="search">
+    <input class="search-in" id="search" type="search" placeholder="Search" aria-label="Search tasks" autocomplete="off" spellcheck="false">
+    <span class="kbd" title="Option-Space opens search from anywhere in this window">Opt Space</span>
+    <button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button>
+  </label>
+  <span class="updated" id="updated"></span>
+  <button class="btn icon" id="theme" type="button"></button>
+  <button class="btn" id="refresh" type="button">Refresh</button>
+</header>
+<nav class="tabs" role="tablist">
+  <button class="tab label" id="tab-personal" role="tab" data-tab="personal">Personal <span class="n" id="tabcount-personal"></span></button>
+  <button class="tab label" id="tab-work" role="tab" data-tab="work">Work <span class="n" id="tabcount-work"></span></button>
+</nav>
+<div class="notes" id="notes"></div>
+<main class="columns">
+  <section class="column" id="col-personal" data-tab="personal">
+    <div class="colhead"><h2>PERSONAL</h2><span class="label n" id="count-personal"></span></div>
+    <ul class="open-list"></ul>
+    <div class="done-head label" hidden>Done &middot; clears after a day</div>
+    <ul class="done-list"></ul>
+  </section>
+  <section class="column" id="col-work" data-tab="work">
+    <div class="colhead"><h2>WORK</h2><span class="label n" id="count-work"></span></div>
+    <ul class="open-list"></ul>
+    <div class="done-head label" hidden>Done &middot; clears after a day</div>
+    <ul class="done-list"></ul>
+  </section>
+</main>
+<div class="scrim" id="scrim"></div>
+<aside class="panel" id="panel" aria-label="Original message">
+  <div class="panel-head"><span class="label" id="panel-src"></span><span class="label asof" id="panel-sub"></span><button class="btn" id="panel-close" type="button">Close</button></div>
+  <div class="panel-main">
+    <h3 id="panel-title"></h3>
+    <div id="panel-body"></div>
+    <div class="also" id="panel-also" hidden></div>
+    <details><summary class="label">Full record</summary><pre id="panel-raw"></pre></details>
+  </div>
+  <div class="panel-foot"><a class="btn" id="panel-go" target="_blank" rel="noopener"></a></div>
+</aside>
+<div class="spot-scrim" id="spot-scrim"></div>
+<div class="spot" id="spot" role="dialog" aria-label="Search tasks">
+  <div class="spot-head">
+    <span class="label">Search</span>
+    <input class="spot-in" id="spot-in" type="text" placeholder="Search your tasks" aria-label="Search your tasks" autocomplete="off" spellcheck="false" role="combobox" aria-controls="spot-list" aria-expanded="true">
+  </div>
+  <div class="spot-list" id="spot-list" role="listbox"></div>
+  <div class="spot-foot"><span>↑↓ to move</span><span>Enter to go to the task</span><span>Cmd Enter to open the original</span><span>Esc to close</span></div>
+</div>
+<script>
+let DATA = { tasks: [] };
+const SOURCES = {
+  email: "Gmail", slack: "Slack", "google-docs": "Google Docs", notion: "Notion", whatsapp: "WhatsApp", text: "Messages",
+  manual: "Added by you",
+};
+const TABS = ["personal", "work"];
+
+function fmtDate(v) {
+  if (!v) return "";
+  const d = /^\d+(\.\d+)?$/.test(String(v)) ? new Date(parseFloat(v) * 1000) : new Date(v);
+  return isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+function dueLabel(due) {
+  return "Due " + new Date(due + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
+}
+function dueSoon(due) { return new Date(due + "T23:59:59") - Date.now() < 2 * 86400000; }
+function rawText(t) {
+  const r = t.raw;
+  if (t.source === "email") return r.body || r.snippet;
+  if (t.source === "google-docs") return "On: “" + ((r.comment.quotedFileContent || {}).value || "") + "”\n\n" + r.comment.author.displayName + ": " + r.comment.content + (r.comment.replies || []).map(x => "\n\n" + x.author.displayName + ": " + x.content).join("");
+  if (t.source === "notion") return r["Write a task"].replace(/<[^>]+>/g, "").trim() + (r.Day ? "\n\nDay: " + r.Day : "");
+  return r.text;
+}
+function el(tag, attrs, ...kids) {
+  const n = document.createElement(tag);
+  Object.entries(attrs || {}).forEach(([k, v]) => k === "class" ? n.className = v : k.startsWith("on") ? n.addEventListener(k.slice(2), v) : n.setAttribute(k, v));
+  kids.flat().forEach(k => k != null && n.append(k));
+  return n;
+}
+function clearsLabel(t) {
+  const hours = Math.max(0, (new Date(t.clears_at) - Date.now()) / 3600000);
+  return hours < 1 ? "Clears <1h" : "Clears in " + Math.round(hours) + "h";
+}
+// Tasks removed as "not a task" this session: shown as a slip to add a reason or undo.
+const removed = new Map();
+function removedRow(t) {
+  const reason = el("input", { class: "in reason", placeholder: "Why isn't this a task? (optional, helps it learn)", "aria-label": "Why this isn't a task" });
+  reason.value = removed.get(t.id).reason || "";
+  const save = async () => {
+    const r = reason.value.trim();
+    if (await api("PATCH", "/api/tasks/" + encodeURIComponent(t.id) + "/dismiss", { reason: r })) { removed.get(t.id).reason = r; removed.get(t.id).saved = true; render(); }
+  };
+  reason.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") { removed.delete(t.id); render(); } });
+  const info = removed.get(t.id);
+  return el("li", { class: "removed-row", id: "removed-" + t.id },
+    el("div", { class: "removed-head" },
+      el("span", { class: "label" }, "Removed"),
+      el("span", { class: "removed-title" }, t.title),
+      el("button", { type: "button", class: "lnk", onclick: () => undismiss(t) }, "Undo"),
+      el("button", { type: "button", class: "lnk", "aria-label": "Close", onclick: () => { removed.delete(t.id); render(); } }, "×")),
+    info.saved
+      ? el("div", { class: "why" }, info.reason ? "Noted: “" + info.reason + "”. Future refreshes will skip tasks like this." : "Future refreshes will skip tasks like this.")
+      : el("div", { class: "form-row" }, reason, el("button", { type: "button", class: "btn", onclick: save }, "Save")),
+  );
+}
+async function dismiss(t) {
+  if (!(await api("POST", "/api/tasks/" + encodeURIComponent(t.id) + "/dismiss", {}))) return;
+  removed.set(t.id, { task: t, reason: "", saved: false });
+  await load();
+  const box = document.querySelector("#removed-" + CSS.escape(t.id) + " .reason");
+  if (box) box.focus();
+}
+async function undismiss(t) {
+  if (await api("DELETE", "/api/tasks/" + encodeURIComponent(t.id) + "/dismiss")) { removed.delete(t.id); await load(); }
+}
+// "Do it for me": a slip under the task for optional notes, then an agent chat opens with the task.
+const delegating = new Set();
+function delegateSlip(t) {
+  const note = el("textarea", { class: "in note-in", rows: "2", placeholder: "Anything the agent should know? (optional)", "aria-label": "Notes for the agent" });
+  const go = async () => {
+    const conn = window.shellConnection;
+    if (!conn || !conn.isFramed) { showNote("Open TODOOM inside Imbue Studio to hand tasks to an agent."); return; }
+    const r = await fetch("/api/tasks/" + encodeURIComponent(t.id) + "/handoff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note: note.value }) });
+    if (!r.ok) { showNote("Couldn't hand that off. Try again."); return; }
+    conn.startWithText((await r.json()).message);
+    delegating.delete(t.id);
+    await load();
+  };
+  note.addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) go(); if (e.key === "Escape") { delegating.delete(t.id); render(); } });
+  setTimeout(() => note.focus(), 0);
+  return el("div", { class: "delegate" },
+    note,
+    el("div", { class: "form-row" },
+      el("button", { type: "button", class: "btn primary", onclick: go }, "Start agent"),
+      el("button", { type: "button", class: "btn", onclick: () => { delegating.delete(t.id); render(); } }, "Cancel"),
+      el("span", { class: "hint" }, "Opens a chat beside this window. It asks before paying or messaging anyone.")));
+}
+function row(t) {
+  const label = SOURCES[t.source] || t.source;
+  const checked = !!t.checked_at;
+  const box = el("input", { type: "checkbox", "aria-label": "Done: " + t.title, onchange: () => setChecked(t, box.checked) });
+  box.checked = checked;
+  const right = checked ? el("span", { class: "clears" }, clearsLabel(t)) : dueControl(t);
+  const other = t.tab === "work" ? "personal" : "work";
+  return el("li", { class: "task" + (checked ? " checked" : ""), id: "task-" + t.id, "data-source": t.source },
+    box,
+    el("div", {}, editable(t, "title", "title", "Task"), editable(t, "why", "why", "Add a note")),
+    right,
+    delegating.has(t.id) ? delegateSlip(t) : null,
+    el("div", { class: "meta" },
+      el("span", { class: "src" }, el("b", {}, label), (t.from ? " · " + t.from : "") + (fmtDate(t.date) ? " · " + fmtDate(t.date) : "")),
+      t.edited ? el("span", { class: "flag" }, "Edited") : null,
+      t.stale ? el("span", { class: "flag warn", title: "Your Mac was offline at the last refresh" }, "Out of date") : null,
+      t.handoff ? el("span", { class: "flag agent", title: "Handed to an agent " + fmtDate(t.handoff.at) }, "Agent on it") : null,
+      t.url ? el("a", { class: "lnk", href: t.url, target: "_blank", rel: "noopener" }, (t.source_url && t.url !== t.source_url) || ["text", "manual"].includes(t.source) ? "Open link ↗" : "Open in " + label + " ↗") : null,
+      t.raw ? el("button", { type: "button", class: "lnk view-original", onclick: () => openPanel(t) }, t.context ? "View conversation" : "View original") : null,
+      checked ? null : el("button", { type: "button", class: "lnk do-it", onclick: () => { delegating.add(t.id); render(); } }, t.handoff ? "Ask again" : "Do it for me"),
+      el("span", { class: "row-actions" },
+        el("button", { type: "button", class: "lnk move", onclick: () => patch(t, { tab: other }) }, "Move to " + (other === "work" ? "Work" : "Personal")),
+        t.edited ? el("button", { type: "button", class: "lnk", onclick: () => resetTask(t) }, "Undo edits") : null,
+        t.source === "manual" ? el("button", { type: "button", class: "lnk danger", onclick: () => removeTask(t) }, "Delete")
+          : el("button", { type: "button", class: "lnk danger not-task", title: "Remove it, and skip tasks like it in future", onclick: () => dismiss(t) }, "Not a task"),
+      ),
+    ),
+  );
+}
+// Text you edit in place: click to type, Enter or clicking away saves, Escape puts it back.
+function editable(t, field, cls, placeholder) {
+  const n = el("div", { class: cls + " live", contenteditable: "plaintext-only", spellcheck: "true", "data-placeholder": placeholder, "aria-label": placeholder, role: "textbox" });
+  n.textContent = t[field] || "";
+  const original = () => t[field] || "";
+  n.addEventListener("keydown", e => {
+    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); n.blur(); }
+    if (e.key === "Escape") { n.textContent = original(); n.blur(); }
+  });
+  n.addEventListener("blur", async () => {
+    const value = n.textContent.replace(/\s+/g, " ").trim();
+    if (value === original()) { n.textContent = original(); return; }
+    if (field === "title" && !value) { n.textContent = original(); showNote("A task needs a title."); return; }
+    n.textContent = value;
+    await patch(t, { [field]: value });
+  });
+  return n;
+}
+// The due date: click it (or "Add due date") to pick a date; clearing the picker removes it.
+function dueControl(t) {
+  const picker = el("input", { type: "date", class: "date-picker", "aria-label": "Due date", tabindex: "-1" });
+  picker.value = t.due || "";
+  picker.addEventListener("change", () => patch(t, { due: picker.value || null }));
+  const open = () => { try { picker.showPicker(); } catch { picker.focus(); } };
+  const btn = t.due
+    ? el("button", { type: "button", class: "due" + (dueSoon(t.due) ? " soon" : ""), onclick: open, title: "Change due date" }, dueLabel(t.due))
+    : el("button", { type: "button", class: "due add-due", onclick: open }, "+ Due date");
+  return el("span", { class: "due-wrap" }, btn, picker);
+}
+async function api(method, url, body) {
+  const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); showNote(e.error ? "Couldn't save: " + e.error + "." : "Couldn't save that. Try again."); return false; }
+  showNote(""); return true;
+}
+async function patch(t, fields) {
+  Object.assign(t, fields);
+  if (await api("PATCH", "/api/tasks/" + encodeURIComponent(t.id), fields)) await load();
+}
+async function removeTask(t) {
+  if (!confirm("Delete “" + t.title + "”?")) return;
+  if (await api("DELETE", "/api/tasks/" + encodeURIComponent(t.id))) await load();
+}
+async function resetTask(t) {
+  if (await api("DELETE", "/api/tasks/" + encodeURIComponent(t.id) + "/edit")) await load();
+}
+// Type a task and press Enter; the box stays ready for the next one.
+function addRow(tab) {
+  const input = el("input", { class: "add-in", placeholder: "+ Add a task", "aria-label": "Add a task to " + tab, id: "add-" + tab });
+  input.addEventListener("keydown", async e => {
+    if (e.key === "Escape") { input.value = ""; input.blur(); }
+    if (e.key !== "Enter" || !input.value.trim()) return;
+    const title = input.value.trim();
+    input.value = "";
+    if (await api("POST", "/api/tasks", { title, tab })) { await load(); document.getElementById("add-" + tab).focus(); }
+  });
+  return el("li", { class: "add-row" }, input);
+}
+function byDue(a, b) { const x = a.due || "9", y = b.due || "9"; return x < y ? -1 : x > y ? 1 : 0; }
+// Search matches every word typed, in any order, against what a task shows:
+// title, note, who it's from, where it came from, and the email subject. Like
+// Spotlight, a word matches the start of a word ("cas" finds "Casey").
+function words(q) { return q.toLowerCase().split(/\s+/).filter(Boolean); }
+function escapeRe(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
+function wordStart(w) { return (/^\w/.test(w) ? "\\b" : "") + escapeRe(w); }
+function haystack(t) {
+  return [t.title, t.why, t.from, SOURCES[t.source] || t.source, t.tab, t.raw && t.raw.subject].filter(Boolean).join(" \n ");
+}
+function matches(t, ws) { const h = haystack(t); return ws.every(w => new RegExp(wordStart(w), "i").test(h)); }
+function highlight(text, ws) {
+  text = text || "";
+  if (!ws.length) return text;
+  const re = new RegExp("(" + ws.map(wordStart).join("|") + ")", "ig");
+  return text.split(re).map((part, i) => i % 2 ? el("mark", {}, part) : part);
+}
+function render() {
+  const ws = words(document.getElementById("search").value);
+  TABS.forEach(tab => {
+    const col = document.getElementById("col-" + tab);
+    const mine = DATA.tasks.filter(t => t.tab === tab && (!ws.length || matches(t, ws)));
+    const open = mine.filter(t => !t.checked_at).sort(byDue);
+    const done = mine.filter(t => t.checked_at).sort((a, b) => a.checked_at < b.checked_at ? 1 : -1);
+    document.getElementById("count-" + tab).textContent = open.length + (ws.length ? " matching" : " open");
+    document.getElementById("tabcount-" + tab).textContent = open.length;
+    document.getElementById("tab-" + tab).setAttribute("aria-selected", String(document.body.dataset.tab === tab));
+    const ol = col.querySelector(".open-list");
+    const slips = [...removed.values()].filter(r => r.task.tab === tab).map(r => removedRow(r.task));
+    ol.replaceChildren(addRow(tab), ...slips, ...open.map(row));
+    if (!open.length) ol.append(el("li", { class: "empty" }, ws.length ? "No open tasks match." : "Nothing outstanding."));
+    col.querySelector(".done-list").replaceChildren(...done.map(row));
+    col.querySelector(".done-head").hidden = !done.length;
+  });
+}
+function openPanel(t) {
+  document.getElementById("panel-src").textContent = SOURCES[t.source];
+  document.getElementById("panel-sub").textContent = [t.from, fmtDate(t.date)].filter(Boolean).join(" · ");
+  document.getElementById("panel-title").textContent = t.source === "email" ? t.raw.subject : t.title;
+  const body = document.getElementById("panel-body");
+  if (t.context) {
+    body.className = "chat";
+    body.replaceChildren(...t.context.map(m => el("div", { class: "msg" + (m.who === "You" ? " me" : "") + (m.this ? " this" : "") },
+      el("div", { class: "who" }, m.who + " · " + fmtDate(m.date) + " " + new Date(m.date).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })),
+      el("div", { class: "bubble" }, m.text))));
+  } else {
+    body.className = "rawbody";
+    body.textContent = rawText(t);
+  }
+  const go = document.getElementById("panel-go");
+  go.parentElement.hidden = !t.url;
+  go.textContent = (t.source_url && t.url !== t.source_url) || t.source === "text" ? "Open link ↗" : "Open in " + SOURCES[t.source] + " ↗";
+  go.href = t.url || "#";
+  document.getElementById("panel-raw").textContent = JSON.stringify(t.raw, null, 2);
+  const also = document.getElementById("panel-also");
+  also.replaceChildren(...(t.also_from || []).map(a => el("div", {}, "Also from " + (SOURCES[a.source] || a.source) + (a.from ? " · " + a.from : "") + " ",
+    a.url ? el("a", { class: "lnk", href: a.url, target: "_blank", rel: "noopener" }, "Open ↗") : null)));
+  also.hidden = !(t.also_from || []).length;
+  document.body.classList.add("open");
+}
+function closePanel() { document.body.classList.remove("open"); }
+document.getElementById("scrim").onclick = closePanel;
+document.getElementById("panel-close").onclick = closePanel;
+document.addEventListener("keydown", e => { if (e.key === "Escape") closePanel(); });
+document.querySelectorAll(".tab").forEach(b => b.onclick = () => { document.body.dataset.tab = b.dataset.tab; render(); });
+const COMPLETE_MS = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 750;
+async function setChecked(t, checked) {
+  const saved = fetch("/api/tasks/" + encodeURIComponent(t.id) + "/check", {
+    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ checked }),
+  });
+  if (checked) {
+    // Let the check mark draw and the task fade before it moves down to Done.
+    const li = document.getElementById("task-" + t.id);
+    if (li) li.classList.add("completing");
+    await new Promise(r => setTimeout(r, COMPLETE_MS));
+    t.checked_at = new Date().toISOString(); t.clears_at = new Date(Date.now() + 86400000).toISOString();
+  } else {
+    delete t.checked_at; delete t.clears_at;
+  }
+  render();
+  const r = await saved;
+  if (!r.ok) showNote("Couldn't save that check-off. Try again.");
+  await load();
+}
+function showNote(text) { document.getElementById("notes").textContent = text; }
+function fmtUpdated(iso) {
+  if (!iso) return "Not updated yet";
+  const d = new Date(iso), today = new Date();
+  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
+  return "Updated " + (d.toDateString() === today.toDateString() ? "today " + time : d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " + time);
+}
+let pendingRender = false;
+function isTyping() {
+  const a = document.activeElement;
+  return a && (a.isContentEditable || a.classList.contains("add-in") || a.classList.contains("reason") || a.classList.contains("note-in")) && (a.isContentEditable || a.value);
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !isTyping()) { pendingRender = false; load(); } }, 0));
+async function load() {
+  const r = await fetch("/api/tasks");
+  if (!r.ok) { showNote("Couldn't load your tasks. Try Refresh."); return; }
+  DATA = await r.json();
+  if (isTyping()) { pendingRender = true; return; }
+  document.getElementById("updated").textContent = fmtUpdated(DATA.generated);
+  // Only sources that failed; one the user turned off ("not-run") is not a problem.
+  const failed = Object.entries(DATA.sources || {}).filter(([, v]) => v && v.status === "failed").map(([k, v]) => v.label || k);
+  showNote(failed.length ? "Couldn't reach " + failed.join(", ") + " last time. Tasks from there may be out of date." : "");
+  render();
+  if (document.body.classList.contains("spotting")) spotSearch();
+}
+// Square-cornered, pixel-style glyphs to match the design system.
+const SUN_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="6" y="0" width="2" height="2"/><rect x="6" y="12" width="2" height="2"/><rect x="0" y="6" width="2" height="2"/><rect x="12" y="6" width="2" height="2"/><rect x="1.5" y="1.5" width="2" height="2"/><rect x="10.5" y="1.5" width="2" height="2"/><rect x="1.5" y="10.5" width="2" height="2"/><rect x="10.5" y="10.5" width="2" height="2"/></svg>';
+const MOON_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M5 1h4v2H7v2H5v4h2v2h4v-2h2v3h-2v2H5v-2H3v-2H1V5h2V3h2z"/></svg>';
+function showThemeButton() {
+  const light = document.documentElement.dataset.theme === "light";
+  const b = document.getElementById("theme");
+  b.innerHTML = light ? MOON_ICON : SUN_ICON;
+  b.setAttribute("aria-label", light ? "Switch to dark mode" : "Switch to light mode");
+  b.title = light ? "Dark mode" : "Light mode";
+}
+document.getElementById("theme").onclick = () => {
+  const light = document.documentElement.dataset.theme !== "light";
+  if (light) document.documentElement.dataset.theme = "light"; else delete document.documentElement.dataset.theme;
+  localStorage.setItem("theme", light ? "light" : "dark");
+  showThemeButton();
+};
+showThemeButton();
+// Refresh pulls new tasks from every source; it can take a few minutes.
+async function watchRefresh() {
+  const btn = document.getElementById("refresh");
+  const r = await fetch("/api/refresh"); if (!r.ok) return;
+  const st = await r.json();
+  btn.disabled = st.running; btn.textContent = st.running ? "Refreshing…" : "Refresh";
+  if (st.running) { setTimeout(watchRefresh, 5000); return; }
+  if (btn.dataset.was === "running") {
+    await load();
+    if (st.last && st.last.exit_code !== 0) showNote("The last refresh didn't finish. Tasks shown are from before it.");
+  }
+  btn.dataset.was = "";
+}
+document.getElementById("refresh").onclick = async () => {
+  const btn = document.getElementById("refresh");
+  btn.dataset.was = "running"; btn.disabled = true; btn.textContent = "Refreshing…";
+  await fetch("/api/refresh", { method: "POST" });
+  setTimeout(watchRefresh, 3000);
+};
+fetch("/api/refresh").then(r => r.json()).then(st => { if (st.running) { document.getElementById("refresh").dataset.was = "running"; watchRefresh(); } });
+
+// The search box at the top: filters both columns as you type; Escape clears it.
+const searchIn = document.getElementById("search");
+searchIn.addEventListener("input", render);
+searchIn.addEventListener("keydown", e => {
+  if (e.key === "Escape") { e.stopPropagation(); searchIn.value = ""; render(); searchIn.blur(); }
+});
+document.getElementById("search-clear").onclick = () => { searchIn.value = ""; render(); searchIn.focus(); };
+
+// Spotlight-style search, opened with Option-Space (and closed with it
+// again, or Escape). Results appear under the box as you type, best first.
+const spot = { items: [], sel: 0 };
+const spotIn = document.getElementById("spot-in");
+function isSpotKey(e) { return e.altKey && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.code === "Space"; }
+let spotReturn = null;
+function openSpot() {
+  spotReturn = document.activeElement;
+  document.body.classList.add("spotting");
+  spotIn.value = searchIn.value;
+  spotSearch();
+  spotIn.focus(); spotIn.select();
+}
+// Closing hands focus back to where it was (unless a jump moves it on).
+function closeSpot() {
+  if (!document.body.classList.contains("spotting")) return;
+  document.body.classList.remove("spotting");
+  spotIn.blur();
+  if (spotReturn && spotReturn !== document.body && document.contains(spotReturn)) spotReturn.focus({ preventScroll: true });
+  spotReturn = null;
+}
+function spotRank(t, ws) {
+  const title = (t.title || "").toLowerCase();
+  let score = 0;
+  ws.forEach(w => { if (title.startsWith(w)) score += 4; else if (new RegExp(wordStart(w)).test(title)) score += 3; });
+  if (!t.checked_at) score += 5;
+  return score;
+}
+function spotSearch() {
+  const ws = words(spotIn.value);
+  const list = document.getElementById("spot-list");
+  if (!ws.length) { spot.items = []; list.replaceChildren(); return; }
+  const hits = DATA.tasks.filter(t => matches(t, ws))
+    .map(t => ({ t, s: spotRank(t, ws) }))
+    .sort((a, b) => b.s - a.s || ((a.t.date || "") < (b.t.date || "") ? 1 : -1))
+    .slice(0, 50).map(h => h.t);
+  // Spotlight-like: a top hit, then the rest grouped by column, done tasks last.
+  const groups = [["Top hit", hits.slice(0, 1)]];
+  const rest = hits.slice(1);
+  TABS.forEach(tab => groups.push([tab === "work" ? "Work" : "Personal", rest.filter(t => t.tab === tab && !t.checked_at)]));
+  groups.push(["Done", rest.filter(t => t.checked_at)]);
+  spot.items = groups.flatMap(([, ts]) => ts);
+  spot.sel = Math.min(spot.sel, Math.max(0, spot.items.length - 1));
+  if (!hits.length) { list.replaceChildren(el("div", { class: "spot-empty" }, "No tasks match “" + spotIn.value.trim() + "”.")); return; }
+  let i = 0;
+  list.replaceChildren(...groups.filter(([, ts]) => ts.length).flatMap(([name, ts]) => [
+    el("div", { class: "spot-group label" }, name),
+    ...ts.map(t => {
+      const n = i++;
+      const label = SOURCES[t.source] || t.source;
+      return el("div", { class: "spot-item" + (t.checked_at ? " done" : ""), role: "option", id: "spot-" + n, "aria-selected": String(n === spot.sel),
+        onmousemove: () => { if (spot.sel !== n) { spot.sel = n; markSpot(); } }, onclick: () => goTo(t) },
+        el("span", { class: "st" }, highlight(t.title, ws)),
+        el("span", { class: "ss" }, [label, t.from, t.due ? dueLabel(t.due) : fmtDate(t.date)].filter(Boolean).join(" · ")),
+        t.why ? el("span", { class: "sw" }, highlight(t.why, ws)) : null);
+    }),
+  ]));
+  markSpot();
+}
+function markSpot() {
+  document.querySelectorAll(".spot-item").forEach((n, i) => n.setAttribute("aria-selected", String(i === spot.sel)));
+  const cur = document.getElementById("spot-" + spot.sel);
+  if (cur) { cur.scrollIntoView({ block: "nearest" }); spotIn.setAttribute("aria-activedescendant", cur.id); }
+}
+// Jump to a task in the list: clear the filter, show its column, scroll to it and flash it.
+function goTo(t) {
+  spotReturn = null;
+  closeSpot();
+  searchIn.value = "";
+  document.body.dataset.tab = t.tab;
+  render();
+  const li = document.getElementById("task-" + t.id);
+  if (!li) return;
+  li.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
+  const box = li.querySelector("input[type=checkbox]");
+  if (box) box.focus({ preventScroll: true });
+}
+spotIn.addEventListener("input", () => { spot.sel = 0; spotSearch(); });
+spotIn.addEventListener("keydown", e => {
+  if (isSpotKey(e)) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); spot.sel = Math.min(spot.sel + 1, spot.items.length - 1); markSpot(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); spot.sel = Math.max(spot.sel - 1, 0); markSpot(); }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    const t = spot.items[spot.sel];
+    if (!t) return;
+    if ((e.metaKey || e.ctrlKey) && t.raw) { spotReturn = null; closeSpot(); openPanel(t); } else goTo(t);
+  } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeSpot(); }
+});
+document.getElementById("spot-scrim").onclick = closeSpot;
+// Capture phase, so the shortcut works even while typing in a task.
+document.addEventListener("keydown", e => {
+  if (!isSpotKey(e)) return;
+  e.preventDefault(); e.stopPropagation();
+  if (document.body.classList.contains("spotting")) closeSpot(); else openSpot();
+}, true);
+load();
+setInterval(load, 5 * 60 * 1000);
+</script>
+__SHELL__
+</body>
+</html>

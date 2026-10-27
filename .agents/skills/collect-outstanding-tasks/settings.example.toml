@@ -1,0 +1,43 @@
+# Settings for collect-outstanding-tasks.
+#
+# Copy this file to data/.skills/collect-outstanding-tasks/settings.toml and fill
+# it in. Every source is optional: leave its setting blank (or slack.enabled =
+# false) and that source is turned off -- the task list shows it as not run and
+# the other sources still refresh.
+
+# Your name as people write it in messages. Claude uses it to tell which
+# messages are to you and to word every task as "you". Blank reads as "the user".
+name = ""  # e.g. "Alex Rivera"
+# Where you work (optional). Helps Claude tell work asks from personal ones.
+employer = ""  # e.g. "Example Co"
+
+[gmail]
+# The Google accounts latchkey has Gmail access for. Work goes to the Work
+# column, personal to the Personal column.
+work_email = ""  # e.g. "alex@work.example"
+personal_email = ""  # e.g. "alex@example.com"
+
+[slack]
+# Read Slack mentions, DMs and your own messages through latchkey's Slack access.
+enabled = false
+# A Slack message you react to with this emoji becomes a Work task, due the
+# next day ("Look at Sam's Slack message in #launch"). Name it without colons;
+# blank turns it off. Marks already there on the first refresh are left out.
+look_later_emoji = "look-later"
+
+[google_docs]
+# The Google account whose Docs comment threads to read (usually your work email).
+account = ""  # e.g. "alex@work.example"
+
+[notion]
+# The latchkey account label for Notion's hosted MCP server, and the data source
+# (a "collection://..." id) of the Notion database you keep your to-dos in.
+# The reader expects a checkbox column named " " and a title column named
+# "Write a task"; see scripts/cot_cloud.py (parse_notion_row) to match yours.
+account = ""  # e.g. "alex@work.example:Example Co"
+tasks_data_source = ""  # e.g. "collection://00000000-0000-0000-0000-000000000000"
+
+[mac]
+# Your Mac's home folder, e.g. /Users/alex. Texts, WhatsApp and Contacts are read
+# from it through Imbue Studio's file sharing while the Mac is awake.
+home = ""  # e.g. "/Users/alex"

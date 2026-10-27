@@ -1,0 +1,57 @@
+{
+ "id": "18f0a1",
+ "threadId": "18f0a0",
+ "labelIds": [
+  "IMPORTANT",
+  "CATEGORY_PERSONAL",
+  "INBOX"
+ ],
+ "snippet": "Hi Alex, please send a photo by Friday &amp; sign up",
+ "internalDate": "1792656000000",
+ "payload": {
+  "mimeType": "multipart/alternative",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Oak Hill Elementary <admin@oakhill.example>"
+   },
+   {
+    "name": "To",
+    "value": "alex@example.com"
+   },
+   {
+    "name": "Subject",
+    "value": "*ACTION NEEDED* class photo"
+   },
+   {
+    "name": "Date",
+    "value": "Thu, 22 Oct 2026 12:00:00 -0700"
+   },
+   {
+    "name": "List-Unsubscribe",
+    "value": "<mailto:unsub@oakhill.example>"
+   }
+  ],
+  "parts": [
+   {
+    "mimeType": "text/plain",
+    "body": {
+     "data": "SGkgQWxleCwKUGxlYXNlIGVtYWlsIGEgcGhvdG8gYnkgRnJpZGF5LgpTaWduIHVwOiBodHRwczovL3NpZ251cC5leGFtcGxlL2NvbmYKCk9uIFdlZCwgT2N0IDIxLCAyMDI2IEFsZXggd3JvdGU6Cj4gb2xkIHF1b3RlZCB0ZXh0Cg"
+    }
+   },
+   {
+    "mimeType": "text/html",
+    "body": {
+     "data": "PHA-SGkgQWxleCw8L3A-PHA-UGxlYXNlIGVtYWlsIGEgcGhvdG8gYnkgRnJpZGF5LjwvcD4"
+    }
+   },
+   {
+    "mimeType": "application/pdf",
+    "filename": "flyer.pdf",
+    "body": {
+     "attachmentId": "a1"
+    }
+   }
+  ]
+ }
+}

@@ -1,0 +1,158 @@
+# Machine-readable manifest for this template. The sibling
+# template.md holds the prose, the Requirements list, and the two
+# append-only history logs; this file is authoritative for everything
+# below. Both are generated together -- validate_template.py fails if
+# they disagree.
+format = "v2"
+
+[template]
+slug = "todo"
+title = "TODOOM"
+description = "All your doom in one place"
+thumbnail = "template.svg"
+version = "v1"
+
+# How this template is DERIVED from the workspace it came from. An
+# update re-runs this recipe rather than diffing two repos, which is what
+# keeps an exclusion excluded even though the thing still exists upstream.
+[recipe]
+include = ["system/apps/task_inbox", "system/supervisord.conf.d/task-inbox.conf", ".agents/skills/collect-outstanding-tasks"]
+data_include = []
+# Deliberate exclusions.
+exclude = [
+    "data/.apps/task-inbox (the publisher's task list, check-marks, edits, added and dismissed tasks)",
+    "data/.skills/collect-outstanding-tasks (the publisher's settings, raw messages, cached model verdicts and status files)",
+    "the refresh schedule (an hourly daytime cron line and a 7am run_job.sh catch-up job, kept in machine state, not in the repo)",
+    "the source workspace's other apps and skills (the Inbox Digest email review app and the email-digest skill)",
+]
+# Published-version modifications, stated as rules.
+modification_rules = [
+    "replace the publisher's hardcoded account identifiers (email addresses, Notion account and data source, Mac home folder) with values read from a settings file under the skill's data dir, with a commented example shipped inside the skill",
+    "a source with no account configured is turned off and reported as not-run instead of failing the run (the app does not warn about it); a missing or malformed settings file stops with a plain-English error naming the file and key",
+    "replace the publisher's name, employer, email addresses and chat user id in every model prompt with 'the user' plus the name and accounts from the settings file, keeping the rule that every task addresses the user as you/your",
+    "replace real people, phone numbers, message text and ids in the skill's test fixtures and tests with clearly made-up data",
+    "replace real contact names in code comments and docstrings with made-up names",
+    "describe sources, settings and costs in the skill's instructions generically, with typical cost estimates instead of the publisher's measured and approved figures",
+    "name the Notion source generically instead of after the publisher's own to-do database",
+    "a source turned off forgets its last successful fetch, so turning it back on reads the whole window again instead of only what is new",
+    "make the Slack look-later emoji a setting (default look-later, blank turns it off) instead of a fixed name",
+    "show the app and the template as TODOOM, with the tagline 'All your doom in one place', instead of the live workspace's name",
+]
+
+# Everything an adopter must deal with before this is really theirs.
+# One list -- but each entry's KIND says how it is handled, because the
+# two are handled at different times by different mechanisms:
+#
+#   permission / secret / llm = ACTIVATION. The adopting agent acts on
+#   these FIRST and BY ITSELF, initiating each latchkey permission
+#   request and each secret request before asking the user anything.
+#   Every one of them must have a matching requires_ line in template.md
+#   and vice versa -- the validator checks that, because an adopter once
+#   never got prompted for a permission the app needed.
+#
+#   The [[requirements.secret]] entries below were AGGREGATED from the
+#   included apps' app.toml [[secrets]] and skills' SKILL.md secrets:
+#   declarations, plus every data/.secrets/<file>.env the snapshot's
+#   mcp-servers.json and supervisord programs run under. Fix a wrong one
+#   at its declaration, not here.
+#
+#   adaptation = worked through INTERACTIVELY with the user afterwards.
+#   Prose on both sides, so it is not cross-checked.
+#
+[requirements]
+
+[[requirements.permission]]
+scope = "google-gmail-api"
+permission = "google-gmail-read-all"
+note = "Work and personal Gmail (one grant per account in the settings file): inbox threads and your replies"
+
+[[requirements.permission]]
+scope = "slack-api"
+permission = "slack-read-all"
+note = "Slack search for mentions, DMs and your own messages; user names"
+
+[[requirements.permission]]
+scope = "google-drive-api"
+permission = "google-drive-read-files"
+note = "lists recently changed Google Docs"
+
+[[requirements.permission]]
+scope = "google-drive-api"
+permission = "google-drive-read-comments"
+note = "open comment threads on those Docs"
+
+[[requirements.permission]]
+scope = "notion-mcp-api"
+permission = "notion-mcp-read-all"
+note = "the Notion to-do database, through Notion's hosted MCP server"
+
+[[requirements.permission]]
+scope = "minds-api-proxy"
+permission = "minds-file-server-read-~/Library/Messages"
+note = "file-sharing READ of ~/Library/Messages for texts; also needs Full Disk Access for Imbue Studio in macOS settings"
+
+[[requirements.permission]]
+scope = "minds-api-proxy"
+permission = "minds-file-server-read-~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared"
+note = "file-sharing READ of WhatsApp Desktop's message database"
+
+[[requirements.permission]]
+scope = "minds-api-proxy"
+permission = "minds-file-server-read-~/Library/Application Support/AddressBook"
+note = "file-sharing READ of Contacts, so texts and WhatsApp show names"
+
+[requirements.llm]
+method = "keyless"
+note = "built for claude -p (the skill's copy of use-ai-integration's claude_p.py, model claude-sonnet-5); refresh_tasks.sh sets CLAUDE_CONFIG_DIR to the most recently used account outside a chat. On the keyed litellm path (ANTHROPIC_API_KEY), switch claude_completer in scripts/cot_judge.py per use-ai-integration"
+
+[[requirements.adaptation]]
+summary = "the user's identity and accounts are not configured (settings.toml is user data and does not ship)"
+resolution = "copy .agents/skills/collect-outstanding-tasks/settings.example.toml to data/.skills/collect-outstanding-tasks/settings.toml and fill in name, employer, Gmail addresses, slack.enabled, the Docs account, the Notion account and data source, and the Mac home folder; leave a source blank to turn it off"
+
+[[requirements.adaptation]]
+summary = "the Notion reader expects the publisher's to-do database layout (a checkbox column named ' ' and a title column 'Write a task')"
+resolution = "point notion.tasks_data_source at the user's database and adjust parse_notion_row / fetch_notion in scripts/cot_cloud.py to its columns, or turn Notion off"
+
+[[requirements.adaptation]]
+summary = "the refresh schedule (hourly 8am-10pm plus a 7am catch-up) is not included"
+resolution = "add both cron lines through the manage-scheduled-tasks skill (template.md gives them exactly): a run_job.sh catch-up job --every 1d --at 7 --retry-after 10m with MINDS_JOB_STATE_DIR=/home/user/workspace/data/.state/jobs, and a plain '0 8-22 * * *' line, both running bash system/apps/task_inbox/refresh_tasks.sh"
+
+[[requirements.adaptation]]
+summary = "Slack look-later marks use the :look-later: emoji by default"
+resolution = "ask which emoji the user wants as their 'look at this later' mark and set slack.look_later_emoji (blank turns it off); marks already there on the first refresh are left out"
+
+[[requirements.adaptation]]
+summary = "texts and WhatsApp only refresh while the user's Mac is awake with Imbue Studio running"
+resolution = "explain it; while the Mac is away those tasks stay, marked stale, and the list says which sources were not read"
+
+[[requirements.adaptation]]
+summary = "the Studio desktop cannot open sms: / whatsapp: links"
+resolution = "text and WhatsApp tasks link to a web page from the message or a wa.me chat, and otherwise show the conversation inline; nothing to change unless the user wants another behaviour"
+
+[[requirements.adaptation]]
+summary = "a first run costs about $6 of Claude usage on a busy set of accounts"
+resolution = "confirm the user is fine with it (run.py judge --dry-run previews what would be sent); later refreshes cost cents"
+
+
+# What the included code needs INSTALLED. apt takes bare names: versions
+# are a function of the apt snapshot timestamp, so replaying names at the
+# adopter's timestamp yields versions consistent with the rest of their
+# environment. The other sources are not snapshot-pinned, so for them the
+# recorded version IS the pin (name = version).
+#
+# Nothing extra: flock, SQLite (Python stdlib), uv, claude and latchkey are all
+# in the stock workspace environment.
+[environment]
+apt = []
+env_d_units = []
+
+# Templates this agent used on the way to this one, oldest first.
+# A new manifest overrides its predecessor rather than accumulating
+# beside it; the commit hash is what keeps the superseded manifest
+# retrievable in the repo where it is authoritative.
+
+[[lineage]]
+slug = "inbox-digest-review"
+repo_url = "https://github.com/imbue-ai/inbox-digest-review-mind-template"
+commit = "0ed139f04fced96fb0e1a7fa01affa12957f8a0c"
+used_on = "2026-10-14"

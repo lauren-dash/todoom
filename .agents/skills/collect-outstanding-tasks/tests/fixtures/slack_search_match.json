@@ -1,0 +1,20 @@
+{
+ "iid": "x",
+ "team": "T1",
+ "score": 0,
+ "type": "message",
+ "channel": {
+  "id": "D123",
+  "is_channel": false,
+  "is_group": false,
+  "is_im": true,
+  "is_mpim": false,
+  "is_private": true,
+  "name": "U0MORGAN"
+ },
+ "user": "U0MORGAN",
+ "username": "morgan.l",
+ "ts": "1792700000.000100",
+ "text": "<@U0ALEX> which layout do you like? centered or bottom logo",
+ "permalink": "https://example-team.slack.com/archives/D123/p1792700000000100?thread_ts=1792690000.000001"
+}

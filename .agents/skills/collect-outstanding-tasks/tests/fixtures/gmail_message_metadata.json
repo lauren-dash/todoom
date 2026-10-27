@@ -1,0 +1,27 @@
+{
+ "id": "18f0b1",
+ "threadId": "18f0b1",
+ "labelIds": [
+  "CATEGORY_UPDATES",
+  "INBOX"
+ ],
+ "snippet": "Your order has shipped",
+ "internalDate": "1792700000000",
+ "payload": {
+  "mimeType": "text/html",
+  "headers": [
+   {
+    "name": "From",
+    "value": "Shop <noreply@shop.example>"
+   },
+   {
+    "name": "To",
+    "value": "alex@example.com"
+   },
+   {
+    "name": "Subject",
+    "value": "Shipped"
+   }
+  ]
+ }
+}

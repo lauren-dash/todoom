@@ -1,0 +1,50 @@
+{
+ "file": {
+  "id": "DOC1",
+  "name": "Spring launch plan",
+  "modifiedTime": "2026-10-21T09:00:00Z",
+  "webViewLink": "https://docs.google.com/document/d/DOC1/edit",
+  "owners": [
+   {
+    "emailAddress": "casey@work.example"
+   }
+  ]
+ },
+ "comment": {
+  "id": "AAAComment1",
+  "content": "is this date final? +alex@work.example",
+  "author": {
+   "displayName": "Alex Rivera",
+   "emailAddress": "alex@work.example",
+   "me": true
+  },
+  "resolved": false,
+  "createdTime": "2026-10-20T10:00:00.000Z",
+  "modifiedTime": "2026-10-21T09:00:00.000Z",
+  "quotedFileContent": {
+   "mimeType": "text/html",
+   "value": "launch moves to May 4"
+  },
+  "replies": [
+   {
+    "id": "r1",
+    "content": "Yes, May 4 is locked",
+    "author": {
+     "displayName": "Casey Lin",
+     "me": false
+    },
+    "createdTime": "2026-10-21T09:00:00.000Z"
+   },
+   {
+    "id": "r2",
+    "content": "deleted",
+    "author": {
+     "displayName": "Casey Lin",
+     "me": false
+    },
+    "createdTime": "2026-10-21T09:05:00.000Z",
+    "deleted": true
+   }
+  ]
+ }
+}
