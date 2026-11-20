@@ -27,37 +27,44 @@ Face it, check it off, and go touch grass.
    read access to the sources you want (Gmail, Slack, Google Docs, Notion, and
    your Mac's Messages, WhatsApp and Contacts folders) and fills in a small
    settings file with your name and accounts. Skip any source you don't use.
-2. **Open the TODOOM window.** Personal tasks are on the left, Work on the right.
-   Each row is one thing you owe, written to you: *"Reply to Jordan about the
-   field trip form -- due Fri"*, with who it's from and a link to the original
-   email, thread, doc comment or chat.
-3. **Find a task.** Type in the **Search** box at the top to narrow both
-   columns as you type (every word you type, in any order, matched from the
-   start of a word: "cas deck" finds *Send Casey the deck*). Or press
-   **Option-Space** anywhere in the window for a Spotlight-style search:
-   a box opens in the middle with results listed underneath (a top hit, then
-   Personal, Work and Done). Arrow keys move, **Enter** jumps to the task,
-   **Cmd-Enter** opens the original message, **Esc** closes. The shortcut
-   works while the TODOOM window is the one you're using.
-4. **Work the list.**
-   - Check a task off: the check draws in, the title is struck through, and it
-     moves to Done (it clears after a day). It won't come back, even if someone
-     sends a reminder about it.
-   - Click a title or note to edit it, or type in **+ Add a task** to add your
-     own.
+2. **Open the TODOOM window.** **Today** shows what's due this week, split into
+   Personal and Work. Each row is one thing you owe, written to you:
+   *"Reply to Jordan about the field trip form"*, with its due date on the
+   right. The sidebar has your full **Personal** and **Work** lists,
+   **Overdue** and **Snoozed**. On a phone, tabs along the top pick Personal
+   or Work.
+3. **Work the list.** Hover a row for its options (on a phone, tap beside the
+   task).
+   - Check a task off: it stays crossed out for a few seconds, then fades away.
+     It won't come back, even if someone sends a reminder about it.
+   - **View** opens the message the task came from (for texts and WhatsApp,
+     the messages around it), with a button to open it in Gmail, Slack, Docs
+     or Notion.
+   - **Snooze** hides a task until tomorrow or next week, or with no deadline
+     until you pick it up again.
    - **Not a task** removes one; add a reason ("school newsletters are never
      tasks") and the next refresh learns from it.
    - **Do it for me** hands the task to a new agent chat, which checks it off
      when it is done.
+   - Click a title to edit it, or type in **+ Add a task** to add your own.
+     Adding and checking off are instant.
    - React to a Slack message with **:look-later:** (or the emoji you pick)
-     and it shows up as a Work task due the next day.
-   - **View original** opens the message the task came from (for texts and
-     WhatsApp, **View conversation** shows the messages around it).
-5. **Refresh.** Press **Refresh** for a new list (usually under a minute), or
-   ask your agent to add the refresh schedule: hourly through the day plus an
-   early-morning catch-up. If a source
-   couldn't be read (say your Mac was asleep), a note at the top says so and
-   its tasks stay on the list marked **Out of date**. A task stays on the list until you check it off or
+     and it shows up as a Work task to review.
+4. **Face the Overdue list.** The doomiest of doom. Give each a new date,
+   snooze it, or **Snooze em all**.
+5. **Find a task.** Press **Option-Space** (or click **Search** in the
+   sidebar) and type: every word, in any order, matched from the start of a
+   word, so "cas deck" finds *Send Casey the deck*. Results cover Personal,
+   Work and Done; arrow keys move, **Enter** jumps to the task, **Cmd-Enter**
+   opens the original message, **Esc** closes. A task you checked off by
+   mistake opens with **Mark not done**.
+6. **Look back.** **Weekly recap** at the bottom of the sidebar lists what you
+   checked off, a week at a time, with **Copy** for a status update.
+7. **Refresh.** Press **Refresh** for a new list (usually under a minute), or
+   ask your agent to add the refresh schedule: hourly through the day, an
+   early-morning catch-up, and a quick check that picks up texts and WhatsApp
+   as soon as your Mac wakes. If a source has been unreadable for over a day, a
+   note at the top says so. A task stays on the list until you check it off or
    remove it, however old the conversation gets. There is a light/dark switch
    next to Refresh.
 
@@ -77,7 +84,7 @@ cents.
   morning refresh.
 - Teach it your own rules, e.g. "anything from the HOA is personal" or
   "recruiter emails are never tasks", by editing the rules prompt in
-  `scripts/cot_judge.py`.
+  `.agents/skills/collect-outstanding-tasks/python/collect_outstanding_tasks_skill/cot_judge.py`.
 
 ## what is this
 
@@ -89,3 +96,8 @@ generic workspace template -- it is this specific project.
 works, what it needs to run, and what to adapt -- with the
 machine-readable half (recipe, requirements, and the environment it needs
 installed) in [`template.toml`](template.toml).
+
+## license
+
+TODOOM is MIT licensed: use it, change it, share it. See [`LICENSE`](LICENSE) for
+what that covers.
