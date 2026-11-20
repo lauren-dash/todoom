@@ -2,7 +2,7 @@
 title: "TODOOM"
 description: "All your doom in one place"
 thumbnail: "template.svg"
-version: v1
+version: v2
 format: v2
 ---
 
@@ -69,8 +69,9 @@ from the original agent onto a clean default-workspace-template base):
   `task-inbox`. It registers the app with `system/scripts/forward_port.py`
   (from `app.toml`, `http://localhost:8080`) and runs the `task-inbox`
   console script, which listens on 127.0.0.1:8080 (`TASK_INBOX_PORT`
-  overrides it). The app is in the uv workspace, so `uv sync --all-packages`
-  installs it.
+  overrides it). The app is a standalone uv project with its own lock and
+  venv; the program syncs it on start (`uv sync --locked --project
+  system/apps/task_inbox`) before launching it.
 - `.agents/skills/collect-outstanding-tasks` -- the task finder skill. `run.py
   fetch` reads each source that is turned on in its settings file, in parallel,
   through `latchkey curl` (Gmail and Drive APIs, Slack Web API, Notion's
@@ -142,7 +143,7 @@ Activation:
 - requires_permission: minds-api-proxy / minds-file-server-read-~/Library/Messages (user-approved; the adopting agent initiates a file-sharing READ request for `~/Library/Messages` during setup; texts. macOS also requires Full Disk Access for Imbue Studio in System Settings > Privacy & Security, or the Mac refuses `chat.db`)
 - requires_permission: minds-api-proxy / minds-file-server-read-~/Library/Group Containers/group.net.whatsapp.WhatsApp.shared (user-approved; the adopting agent initiates a file-sharing READ request for that folder during setup; WhatsApp Desktop's message database)
 - requires_permission: minds-api-proxy / minds-file-server-read-~/Library/Application Support/AddressBook (user-approved; the adopting agent initiates a file-sharing READ request for that folder during setup; Contacts, so texts and WhatsApp show names instead of numbers)
-- requires_llm: calls Claude through the keyless subscription path (`claude -p`, via the skill's copy of use-ai-integration's `claude_p.py`, model `claude-sonnet-5`); `refresh_tasks.sh` sets `CLAUDE_CONFIG_DIR` to the workspace's most recently used account when it runs outside a chat. An adopter on the keyed litellm path (ANTHROPIC_API_KEY) must switch the model calls in `scripts/cot_judge.py` (`claude_completer`) per the use-ai-integration skill.
+- requires_llm: calls Claude through the keyless subscription path (`claude -p`, via the skill's copy of use-ai-integration's `claude_p.py`, model `claude-sonnet-5`); `refresh_tasks.sh` sets `CLAUDE_CONFIG_DIR` to the workspace's most recently used account when it runs outside a chat. An adopter on the keyed litellm path (ANTHROPIC_API_KEY) must switch the model calls in `python/collect_outstanding_tasks_skill/cot_judge.py` (`claude_completer`) per the use-ai-integration skill.
 
 Every source is optional: a permission you skip just leaves that source turned
 off. There are no secrets to supply. Every service goes through latchkey.
@@ -170,18 +171,20 @@ Adaptation:
   publisher's to-do database layout: a checkbox column named `" "` and a title
   column named `"Write a task"`, with optional `Notes` / `Day` / `Week`. If
   your database uses other columns, change `parse_notion_row` and the filter
-  in `fetch_notion` (`scripts/cot_cloud.py`), or turn Notion off.
+  in `fetch_notion` (`python/collect_outstanding_tasks_skill/cot_cloud.py`), or turn Notion off.
 - **Add the refresh schedule, if you want one.** The publisher's list
-  refreshed every hour through the day (8am-10pm) plus a 7am catch-up run that
-  is not missed if the workspace was down overnight. The schedule lives in
-  machine state, so it does not ship. Add both lines through the
-  manage-scheduled-tasks skill, in one cron file such as
-  `data/.state/cron.d/todo-refresh` (two runs never overlap; a run that finds
-  one going is skipped):
-  - the 7am catch-up job, through `run_job.sh`:
-    `* * * * *   root   /home/user/workspace/system/libs/automations/with_agent_env.sh env MINDS_JOB_STATE_DIR=/home/user/workspace/data/.state/jobs /home/user/workspace/system/libs/automations/run_job.sh todo-refresh --every 1d --at 7 --retry-after 10m bash /home/user/workspace/system/apps/task_inbox/refresh_tasks.sh >> /var/log/supervisor/todo-refresh.log 2>&1`
-  - the hourly daytime refresh, a plain cron line:
-    `0 8-22 * * *   root   /home/user/workspace/system/libs/automations/with_agent_env.sh bash /home/user/workspace/system/apps/task_inbox/refresh_tasks.sh >> /var/log/supervisor/todo-refresh.log 2>&1`
+  refreshed every hour through the day plus a 7am run, and re-read texts and
+  WhatsApp as soon as the Mac woke up. The schedule does not ship. Add it as
+  routines through the manage-routines skill (two refreshes never overlap; a
+  run that finds one going is skipped):
+  - the morning refresh:
+    `uv run --no-sync routines add todo-refresh --title "Todo refresh" --what "Pulls a fresh task list." --app task-inbox --every 1d --at 07:00 --retry-after 10m -- bash /home/user/workspace/system/apps/task_inbox/refresh_tasks.sh`
+  - the hourly refresh (routines have no daytime window, so this one also
+    runs overnight; later refreshes cost cents):
+    `uv run --no-sync routines add todo-refresh-hourly --title "Todo hourly refresh" --what "Keeps the task list current." --app task-inbox --every 1h -- bash /home/user/workspace/system/apps/task_inbox/refresh_tasks.sh`
+  - the Mac catch-up, which re-reads only texts and WhatsApp when their last
+    read failed because the Mac was asleep, and does nothing otherwise:
+    `uv run --no-sync routines add todo-mac-catchup --title "Todo Mac catch-up" --what "Reads texts and WhatsApp once the Mac wakes." --app task-inbox --every 10m -- bash /home/user/workspace/system/apps/task_inbox/mac_catchup.sh`
 
   Without them the list refreshes only when you press Refresh.
 - **Texts and WhatsApp only refresh while your Mac is awake** with Imbue Studio
@@ -246,6 +249,8 @@ appends one entry per version (newest last); earlier entries are never rewritten
 This is distinct from "Adaptation history" below, which is the ADOPTERS' log.
 
 ### v1 (2026-10-27) -- first version: the two-column TODOOM app with search and the task finder skill, reading seven sources from a fill-in settings file, refreshing incrementally, keeping open tasks until you clear them, never bringing back what you checked off, and turning Slack look-later marks into tasks
+
+### v2 (2026-11-19) -- Redesign (Today split into Personal and Work, Overdue and Snoozed lists, snooze, quiet rows with hover actions, View window, search), phone layout, instant add and check-off, weekly recap, new icon, Mac catch-up on wake, smarter task finding; moved to the current Studio foundation.
 
 ## Adaptation history
 

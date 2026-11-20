@@ -46,12 +46,12 @@ latchkey permission granted (see the template's requirements).
 The Notion reader expects a database whose checkbox column is named `" "` and
 title column `"Write a task"` (with optional `Notes`, `Day`, `Week`); for a
 different database, change `parse_notion_row` / `fetch_notion` in
-`scripts/cot_cloud.py`.
+`python/collect_outstanding_tasks_skill/cot_cloud.py`.
 
 ## Run it
 
 ```bash
-uv run .agents/skills/collect-outstanding-tasks/scripts/run.py all
+uv run --no-sync .agents/skills/collect-outstanding-tasks/python/collect_outstanding_tasks_skill/run.py all
 ```
 
 In a chat, run the steps one at a time so the user sees progress:
@@ -89,9 +89,10 @@ reminder about one into it, so the app shows it as done.
    about $6 and ~10 minutes for a first month on a busy set of accounts; cents
    per refresh (a handful of changed conversations). The app's Refresh button
    runs `system/apps/task_inbox/refresh_tasks.sh`, and so does the refresh
-   schedule if you add one: an hourly daytime cron line (8am-10pm) plus a 7am
-   catch-up job through `run_job.sh` (see the template's requirements for the
-   exact lines). `judge --dry-run` prints what would be sent, with no calls.
+   schedule if you add one: routines for a 7am and an hourly refresh, plus a
+   Mac catch-up (`system/apps/task_inbox/mac_catchup.sh`) that re-reads texts
+   and WhatsApp once the Mac wakes (see the template's requirements for the
+   exact commands). `judge --dry-run` prints what would be sent, with no calls.
    After that, one small call rewords any task that still talks about the user
    in the third person ("she", "he", "the user", their name) so it speaks to
    them as "you" (cached in `voice.json` by the original wording; a task is only
@@ -119,7 +120,7 @@ Source keys for `--source`: `gmail-work`, `slack`, `google-docs`, `notion`,
 - Look-back: 30 days. Notion rows count only if unchecked and edited in that
   window.
 
-The rules live in the `SYSTEM` prompt in `scripts/cot_judge.py`. Changing that
+The rules live in the `SYSTEM` prompt in `python/collect_outstanding_tasks_skill/cot_judge.py`. Changing that
 prompt? Bump `PROMPT_VERSION` so every conversation is re-read under it -- a
 cold re-read (~$6), so ask the user first.
 
@@ -221,11 +222,11 @@ texts/WhatsApp `context` (`[{who, date, text, this}]`, 6 before / 2 after).
 - When the Mac is offline one ~20 s probe fails and both Mac sources are marked
   failed with that reason; their last snapshot and tasks stay (marked stale).
 - Identities (name, emails, Notion data source, Mac home) come from
-  `settings.toml`, loaded by `load_settings` in `scripts/cot_common.py`; the
+  `settings.toml`, loaded by `load_settings` in `python/collect_outstanding_tasks_skill/cot_common.py`; the
   Slack user is whoever latchkey's Slack access belongs to (`auth.test`).
 
 ## Tests
 
 ```bash
-uv run pytest .agents/skills/collect-outstanding-tasks
+uv run --no-sync pytest .agents/skills/collect-outstanding-tasks/python
 ```

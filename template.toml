@@ -10,7 +10,7 @@ slug = "todo"
 title = "TODOOM"
 description = "All your doom in one place"
 thumbnail = "template.svg"
-version = "v1"
+version = "v2"
 
 # How this template is DERIVED from the workspace it came from. An
 # update re-runs this recipe rather than diffing two repos, which is what
@@ -22,7 +22,7 @@ data_include = []
 exclude = [
     "data/.apps/task-inbox (the publisher's task list, check-marks, edits, added and dismissed tasks)",
     "data/.skills/collect-outstanding-tasks (the publisher's settings, raw messages, cached model verdicts and status files)",
-    "the refresh schedule (an hourly daytime cron line and a 7am run_job.sh catch-up job, kept in machine state, not in the repo)",
+    "the refresh schedule (the source's system/routines/todo-refresh.toml routine, plus its hourly-refresh and Mac catch-up lines kept in machine state)",
     "the source workspace's other apps and skills (the Inbox Digest email review app and the email-digest skill)",
 ]
 # Published-version modifications, stated as rules.
@@ -103,7 +103,7 @@ note = "file-sharing READ of Contacts, so texts and WhatsApp show names"
 
 [requirements.llm]
 method = "keyless"
-note = "built for claude -p (the skill's copy of use-ai-integration's claude_p.py, model claude-sonnet-5); refresh_tasks.sh sets CLAUDE_CONFIG_DIR to the most recently used account outside a chat. On the keyed litellm path (ANTHROPIC_API_KEY), switch claude_completer in scripts/cot_judge.py per use-ai-integration"
+note = "built for claude -p (the skill's copy of use-ai-integration's claude_p.py, model claude-sonnet-5); refresh_tasks.sh sets CLAUDE_CONFIG_DIR to the most recently used account outside a chat. On the keyed litellm path (ANTHROPIC_API_KEY), switch claude_completer in python/collect_outstanding_tasks_skill/cot_judge.py per use-ai-integration"
 
 [[requirements.adaptation]]
 summary = "the user's identity and accounts are not configured (settings.toml is user data and does not ship)"
@@ -111,11 +111,11 @@ resolution = "copy .agents/skills/collect-outstanding-tasks/settings.example.tom
 
 [[requirements.adaptation]]
 summary = "the Notion reader expects the publisher's to-do database layout (a checkbox column named ' ' and a title column 'Write a task')"
-resolution = "point notion.tasks_data_source at the user's database and adjust parse_notion_row / fetch_notion in scripts/cot_cloud.py to its columns, or turn Notion off"
+resolution = "point notion.tasks_data_source at the user's database and adjust parse_notion_row / fetch_notion in python/collect_outstanding_tasks_skill/cot_cloud.py to its columns, or turn Notion off"
 
 [[requirements.adaptation]]
-summary = "the refresh schedule (hourly 8am-10pm plus a 7am catch-up) is not included"
-resolution = "add both cron lines through the manage-scheduled-tasks skill (template.md gives them exactly): a run_job.sh catch-up job --every 1d --at 7 --retry-after 10m with MINDS_JOB_STATE_DIR=/home/user/workspace/data/.state/jobs, and a plain '0 8-22 * * *' line, both running bash system/apps/task_inbox/refresh_tasks.sh"
+summary = "the refresh schedule (a 7am and an hourly refresh, plus a Mac catch-up for texts and WhatsApp) is not included"
+resolution = "add three routines through the manage-routines skill (template.md gives the commands exactly): todo-refresh --every 1d --at 07:00 --retry-after 10m and todo-refresh-hourly --every 1h, both running bash system/apps/task_inbox/refresh_tasks.sh, and todo-mac-catchup --every 10m running bash system/apps/task_inbox/mac_catchup.sh"
 
 [[requirements.adaptation]]
 summary = "Slack look-later marks use the :look-later: emoji by default"

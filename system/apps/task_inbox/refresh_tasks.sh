@@ -15,7 +15,7 @@ if [ -z "${CLAUDE_CONFIG_DIR:-}" ]; then
   [ -n "$account" ] && [ -d "$HOME/.minds/accounts/$account" ] && export CLAUDE_CONFIG_DIR="$HOME/.minds/accounts/$account"
 fi
 started=$(date -u +%Y-%m-%dT%H:%M:%SZ)
-uv run .agents/skills/collect-outstanding-tasks/scripts/run.py all > "$DATA_DIR/refresh.log" 2>&1
+uv run --no-sync .agents/skills/collect-outstanding-tasks/python/collect_outstanding_tasks_skill/run.py all "$@" > "$DATA_DIR/refresh.log" 2>&1
 code=$?
 printf '{"started_at": "%s", "finished_at": "%s", "exit_code": %d}\n' "$started" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$code" > "$DATA_DIR/refresh_status.json"
 exit $code

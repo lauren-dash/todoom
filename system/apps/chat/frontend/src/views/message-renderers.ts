@@ -8,6 +8,7 @@ import { MarkdownContent } from "../markdown";
 import type { TranscriptEvent, AssistantMessageEvent, ToolResultEvent, ToolCall } from "../models/Response";
 import { getEventDetailState, getEventDetailVersion, requestEventDetail } from "../models/Response";
 import { getChatById } from "../models/Chats";
+import { workspaceAgentSignature } from "../models/Participants";
 import { accountForAgent, areAccountsLoaded, openProviderChooser } from "../models/Providers";
 import { openSubagentView } from "../shell";
 import { beginSwitchToAccountId } from "./SwitchDialog";
@@ -18,8 +19,12 @@ import type { PermissionResolution, RequestResolution, SecretResolution } from "
 import { isSkillExpansionUserMessage } from "./message-classification";
 import { PermissionCard, isFiledPermissionRequest, parsePermissionRequest } from "./permission-card";
 import { SecretCard, isFiledSecretRequest, parseSecretRequest } from "./secret-card";
-import { ToolChipGroup, type ChipCall } from "./ToolChipGroup";
+import { ToolChipGroup, type ChipEntry } from "./ToolChipGroup";
+import { AutocompactNotice } from "./AutocompactNotice";
+import { compactionChips, type CompactionPart } from "./compaction-chips";
+import { machineBubbles } from "./machine-bubbles";
 import { badgeClass } from "@imbue/workspace-ui/src/components/Badge";
+import { BADGE_PART } from "@imbue/workspace-ui/src/themes/parts";
 
 /** A permission-request tool call's own verdict: its own request id's entry in
  *  `resolutionsByRequestId`, or null while the request awaits a decision (or
@@ -211,6 +216,9 @@ export function StableAssistantMessage(): m.Component<{
   let renderedSubagentCardCount = 0;
   let renderedResultSignature = "";
   let renderedReauthSignature = "";
+  // The header over the run's first bubbles reads the roster, which lands beside the
+  // transcript (ensureParticipants); a row painted before then wears the fallback.
+  let renderedAgentSignature = "";
   let renderedDetailVersion = -1;
   let renderedExpansionVersion = -1;
   return {
@@ -234,6 +242,7 @@ export function StableAssistantMessage(): m.Component<{
         currentSubagentCardCount !== renderedSubagentCardCount ||
         currentResultSignature !== renderedResultSignature ||
         reauthNoteSignature(event, chatId) !== renderedReauthSignature ||
+        workspaceAgentSignature() !== renderedAgentSignature ||
         getEventDetailVersion(chatId) !== renderedDetailVersion ||
         // Opening a tool chip swaps WHICH detail panel exists, so it needs a
         // real re-render to build one.
@@ -249,6 +258,7 @@ export function StableAssistantMessage(): m.Component<{
       renderedSubagentCardCount = countSubagentCards(event.tool_calls);
       renderedResultSignature = resolvedResultSignature(event.tool_calls, toolResults);
       renderedReauthSignature = reauthNoteSignature(event, chatId);
+      renderedAgentSignature = workspaceAgentSignature();
       renderedDetailVersion = getEventDetailVersion(chatId);
       renderedExpansionVersion = getExpansionVersion();
 
@@ -289,11 +299,16 @@ function rendersAsCard(toolCall: ToolCall, result: ToolResultEvent | null): bool
   return isSubagentCardCall(toolCall) || isFiledPermissionRequest(toolCall, result);
 }
 
-/** Whether an event's entire contribution to a run is chips: no thinking
+/** One member of an assistant run: an assistant event, or a compaction, whose chips
+ *  join the run's chip row like a tool call's. */
+export type RunPart = AssistantMessageEvent | CompactionPart;
+
+/** Whether a part's entire contribution to a run is chips: no thinking
  *  toggle, no prose, and every call one that chips rather than cards. Nothing
- *  in such an event can break a chip row, which is what lets a consecutive run
- *  of them share one (see buildRows). */
-export function isChipOnlyEvent(event: AssistantMessageEvent, toolResults: Map<string, ToolResultEvent>): boolean {
+ *  in such a part can break a chip row, which is what lets a consecutive run
+ *  of them share one (see buildRows). A compaction is chips alone. */
+export function isChipOnlyEvent(event: RunPart, toolResults: Map<string, ToolResultEvent>): boolean {
+  if (event.type === "compaction") return true;
   if (event.has_thinking) return false;
   if (event.text) return false;
   const toolCalls = event.tool_calls || [];
@@ -318,7 +333,7 @@ export function isChipOnlyEvent(event: AssistantMessageEvent, toolResults: Map<s
  * markdown is not re-rendered either way.
  */
 export function renderAssistantRunRow(
-  events: AssistantMessageEvent[],
+  events: RunPart[],
   toolResults: Map<string, ToolResultEvent>,
   chatId: string,
 ): m.Vnode {
@@ -385,7 +400,9 @@ export function renderSubagentCard(toolCall: ToolCall, chatId: string, isRunning
           { class: "subagent-card-description truncate text-(length:--font-size-body) font-medium text-primary" },
           description,
         ),
-        agentType ? m("span", { class: badgeClass("accent", { mono: true, extra: "shrink-0" }) }, agentType) : null,
+        agentType
+          ? m("span", { class: badgeClass("accent", { mono: true, extra: "shrink-0" }), ...BADGE_PART }, agentType)
+          : null,
       ]),
       // The click-through needs the subagent session_id, which only arrives once the call is
       // linked. The label stays "View conversation" throughout so it doesn't flip-flop; before
@@ -544,6 +561,8 @@ function renderThinkingDisclosure(event: AssistantMessageEvent, chatId: string):
  * a harness emits one event per model response, so three tool calls in a row are
  * usually three events, and grouping only within an event would leave them as
  * three separate rows. Prose breaks the run and starts a fresh row after it.
+ * A compaction's chips join the row like a call's, and the one-time Auto-compact
+ * notice goes under the row that holds its anchor compaction.
  *
  * Callers that hold a whole list of events (a step's revealed work, an ungrouped
  * run, a handoff's body) pass them all so the merging can happen; a caller that
@@ -551,7 +570,7 @@ function renderThinkingDisclosure(event: AssistantMessageEvent, chatId: string):
  * on its own) passes just that one and gets a row per event.
  */
 export function renderAssistantRun(
-  events: AssistantMessageEvent[],
+  events: RunPart[],
   toolResults: Map<string, ToolResultEvent>,
   chatId: string,
   resolutionsByRequestId: ReadonlyMap<string, RequestResolution> = new Map(),
@@ -561,16 +580,28 @@ export function renderAssistantRun(
   // One array for the whole run, emptied in place by `splice` rather than
   // reassigned: appendEventParts holds this same reference, so swapping in a
   // fresh array here would leave it pushing into the flushed one.
-  const pendingChips: ChipCall[] = [];
+  const pendingChips: ChipEntry[] = [];
+  let isNoticeUnderRow = false;
+  // The run's first prose wears the agent's face and name; the rest of its bubbles follow under them.
+  const header = { isDrawn: false };
 
   // Anything that is not a tool chip ends the run in progress: the row has to
   // land above whatever interrupted it, in transcript order.
   const flushChips = (): void => {
     if (pendingChips.length === 0) return;
     children.push(m(ToolChipGroup, { chips: pendingChips.splice(0), toolResults, chatId }));
+    if (isNoticeUnderRow) {
+      children.push(m(AutocompactNotice));
+      isNoticeUnderRow = false;
+    }
   };
 
   for (const event of events) {
+    if (event.type === "compaction") {
+      pendingChips.push(...compactionChips(event));
+      isNoticeUnderRow ||= event.isNoticeAnchor;
+      continue;
+    }
     appendEventParts(
       event,
       toolResults,
@@ -580,6 +611,7 @@ export function renderAssistantRun(
       children,
       pendingChips,
       flushChips,
+      header,
     );
   }
   flushChips();
@@ -617,8 +649,9 @@ function appendEventParts(
   resolutionsByRequestId: ReadonlyMap<string, RequestResolution>,
   secretNotesByRequestId: ReadonlyMap<string, string>,
   children: m.Children[],
-  pendingChips: ChipCall[],
+  pendingChips: ChipEntry[],
   flushChips: () => void,
+  header: { isDrawn: boolean },
 ): void {
   const textContent = event.text || "";
   const toolCalls = event.tool_calls || [];
@@ -655,9 +688,17 @@ function appendEventParts(
         ]),
       );
     } else {
-      children.push(
-        m(MarkdownContent, { content: textContent, requestedAt: event.timestamp, expansionKeyPrefix: event.event_id }),
-      );
+      // The agent speaking: the reply as one bubble, the run's first group headed by its face and name.
+      const bubbles = machineBubbles({
+        text: textContent,
+        timestamp: event.timestamp,
+        expansionKeyPrefix: event.event_id,
+        isHeaded: !header.isDrawn,
+      });
+      if (bubbles !== null) {
+        children.push(bubbles);
+        header.isDrawn = true;
+      }
     }
   }
   for (const toolCall of toolCalls) {
@@ -696,7 +737,7 @@ function appendEventParts(
       children.push(m(SecretCard, { toolCall, toolResult: result, resolution, note }));
       continue;
     }
-    pendingChips.push({ call: toolCall, eventId: event.event_id });
+    pendingChips.push({ kind: "tool", call: toolCall, eventId: event.event_id });
   }
 }
 

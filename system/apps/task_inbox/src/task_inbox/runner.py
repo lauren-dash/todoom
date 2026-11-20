@@ -31,6 +31,7 @@ WebSockets.
 
 import datetime
 import fcntl
+import gzip
 import subprocess
 import json
 import re
@@ -102,6 +103,9 @@ DISMISSED_FILE = DATA_DIR / "dismissed.json"
 # recognise it (and reminders about it) and not list it again. Kept in step
 # with checked.json: added on check, removed on uncheck.
 COMPLETED_FILE = DATA_DIR / "completed.json"
+# Tasks the user snoozed: id -> {"at", "until"}. "until" is a YYYY-MM-DD day the task
+# comes back, or null for "no deadline" (it waits in Snoozed until the user picks it up).
+SNOOZED_FILE = DATA_DIR / "snoozed.json"
 # Tasks the user handed to an agent ("Do it for me"), so the list can show it.
 HANDOFFS_FILE = DATA_DIR / "handoffs.json"
 SOURCE_LABELS = {
@@ -207,12 +211,17 @@ def api_tasks() -> Response:
         checked = _read_json(CHECKED_FILE, {})
         dismissed = _read_json(DISMISSED_FILE, {})
         handoffs = _read_json(HANDOFFS_FILE, {})
+        snoozed = _read_json(SNOOZED_FILE, {})
     tasks = []
     for task in all_tasks:
         if any(i in dismissed for i in _task_ids(task)):
             continue
         if task["id"] in handoffs:
             task = {**task, "handoff": handoffs[task["id"]]}
+        # The page decides whether a dated snooze has run out (it knows the user's day).
+        snooze = next((snoozed[i] for i in _task_ids(task) if i in snoozed), None)
+        if snooze:
+            task = {**task, "snoozed": snooze}
         # A task counts as checked if it, or any duplicate folded into it, was checked.
         stamps = [checked[i] for i in _task_ids(task) if i in checked]
         if stamps:
@@ -222,11 +231,40 @@ def api_tasks() -> Response:
                 continue
             task = {**task, "checked_at": checked_at, "clears_at": clears_at.isoformat()}
         tasks.append(task)
-    return jsonify({**data, "tasks": tasks, "now": now.isoformat()})
+    # The list leaves out each task's original message (the View panel fetches it
+    # on demand) and the finder's notes on what it skipped, which the page never
+    # shows: together they were most of every reload after an add or check-off.
+    meta = {k: v for k, v in data.items() if k not in ("tasks", "skipped")}
+    return jsonify({**meta, "tasks": [_list_entry(t) for t in tasks], "now": now.isoformat()})
+
+
+def _list_entry(task: dict) -> dict:
+    raw = task.get("raw")
+    entry = {k: v for k, v in task.items() if k != "raw"}
+    entry["has_raw"] = bool(raw)
+    subject = raw.get("subject") if isinstance(raw, dict) else None
+    if subject:
+        entry["raw_subject"] = subject
+    return entry
+
+
+@app.route("/api/tasks/<task_id>/raw")
+def api_raw(task_id: str) -> Response:
+    """The original message a task came from, shown in the View panel."""
+    _, all_tasks = _all_tasks()
+    task = next((t for t in all_tasks if t["id"] == task_id), None)
+    if task is None:
+        abort(404)
+    return jsonify({"id": task_id, "raw": task.get("raw")})
+
+
+# The page makes its own id for a task it adds, so the task shows the moment
+# it is typed and later edits name it without waiting for the save.
+MANUAL_ID = re.compile(r"manual-[0-9a-f]{12}")
 
 
 @app.route("/api/tasks", methods=["POST"])
-def api_add() -> Response:
+def api_add() -> Response | tuple[Response, int]:
     body = request.get_json(silent=True) or {}
     try:
         fields = _clean_fields({"tab": "personal", **body})
@@ -234,19 +272,24 @@ def api_add() -> Response:
         return jsonify({"error": str(e)}), 400
     if "title" not in fields:
         return jsonify({"error": "a task needs a title"}), 400
+    task_id = body.get("id")
+    if not (isinstance(task_id, str) and MANUAL_ID.fullmatch(task_id)):
+        task_id = "manual-" + uuid.uuid4().hex[:12]
     task = {
-        "id": "manual-" + uuid.uuid4().hex[:12], "source": "manual", "from": None, "url": None,
+        "id": task_id, "source": "manual", "from": None, "url": None,
         "why": "", "due": None, **fields, "date": _now().isoformat(), "raw": None,
     }
     with _state_lock:
         manual = _read_json(MANUAL_FILE, [])
+        if any(t["id"] == task_id for t in manual):
+            return jsonify({"error": "that task already exists"}), 409
         manual.append(task)
         _write_json(MANUAL_FILE, manual)
     return jsonify(task), 201
 
 
 @app.route("/api/tasks/<task_id>", methods=["PATCH"])
-def api_edit(task_id: str) -> Response:
+def api_edit(task_id: str) -> Response | tuple[Response, int]:
     try:
         fields = _clean_fields(request.get_json(silent=True) or {})
     except ValueError as e:
@@ -321,7 +364,7 @@ def api_refresh_status() -> Response:
 
 
 @app.route("/api/refresh", methods=["POST"])
-def api_refresh() -> Response:
+def api_refresh() -> Response | tuple[Response, int]:
     if not _refresh_running():
         DATA_DIR.mkdir(parents=True, exist_ok=True)
         subprocess.Popen(
@@ -367,6 +410,49 @@ def _handoff_message(task: dict, note: str) -> str:
         "-H 'Content-Type: application/json' -d '{\"checked\": true}'",
     ]
     return "\n".join(lines)
+
+
+def _snooze_until(body: dict) -> str | None:
+    until = body.get("until")
+    if until in (None, ""):
+        return None
+    datetime.date.fromisoformat(until)  # ValueError on anything but YYYY-MM-DD
+    return until
+
+
+@app.route("/api/snooze", methods=["POST"])
+def api_snooze() -> Response | tuple[Response, int]:
+    """Snooze tasks: {"ids": [...], "until": "YYYY-MM-DD" | null}. null means no deadline."""
+    body = request.get_json(silent=True) or {}
+    ids = body.get("ids") or []
+    try:
+        until = _snooze_until(body)
+    except ValueError:
+        return jsonify({"error": "until must be a date (YYYY-MM-DD) or empty"}), 400
+    _, all_tasks = _all_tasks()
+    known = {t["id"] for t in all_tasks}
+    if not ids or not all(isinstance(i, str) and i in known for i in ids):
+        abort(404)
+    with _state_lock:
+        snoozed = _read_json(SNOOZED_FILE, {})
+        for task_id in ids:
+            snoozed[task_id] = {"at": _now().isoformat(), "until": until}
+        _write_json(SNOOZED_FILE, snoozed)
+    return jsonify({"ids": ids, "until": until})
+
+
+@app.route("/api/tasks/<task_id>/snooze", methods=["DELETE"])
+def api_unsnooze(task_id: str) -> Response:
+    _, all_tasks = _all_tasks()
+    task = next((t for t in all_tasks if t["id"] == task_id), None)
+    if task is None:
+        abort(404)
+    with _state_lock:
+        snoozed = _read_json(SNOOZED_FILE, {})
+        for i in _task_ids(task):
+            snoozed.pop(i, None)
+        _write_json(SNOOZED_FILE, snoozed)
+    return jsonify({"id": task_id, "snoozed": False})
 
 
 @app.route("/api/tasks/<task_id>/handoff", methods=["POST"])
@@ -450,7 +536,26 @@ def _completed_entry(task: dict, at: str) -> dict:
         "at": at, "title": task.get("title"), "why": task.get("why"), "tab": task.get("tab"),
         "source": task.get("source"), "source_key": task.get("source_key"), "from": task.get("from"),
         "date": task.get("date"), "merged_ids": task.get("merged_ids", []),
+        "url": task.get("url"), "source_url": task.get("source_url"),
     }
+
+
+@app.route("/api/recap")
+def api_recap() -> Response:
+    """Every work task the user checked off, for the weekly recap. Each comes with
+    the full task (its original message and link) while the finder still has it."""
+    _, all_tasks = _all_tasks()
+    known = {i: task for task in all_tasks for i in _task_ids(task)}
+    with _state_lock:
+        completed = _read_json(COMPLETED_FILE, {})
+    done = [
+        {**known.get(task_id, {}), **{k: v for k, v in entry.items() if v is not None},
+         "id": task_id, "checked_at": entry["at"]}
+        for task_id, entry in completed.items()
+        if entry.get("tab") == "work" and entry.get("at")
+    ]
+    done.sort(key=lambda t: t["checked_at"])
+    return jsonify({"done": done})
 
 
 @app.route("/_static/<basename>")
@@ -464,6 +569,29 @@ def shell_module(basename: str) -> Response:
         abort(404)
     # Flask resolves a relative path against the app's own directory, not the cwd.
     return send_file(module_path.absolute(), mimetype="text/javascript")
+
+
+COMPRESSIBLE = ("application/json", "text/html", "text/javascript")
+
+
+@app.after_request
+def compress(response: Response) -> Response:
+    """Gzip text answers for browsers that take it; over a remote link the size is the wait."""
+    if (
+        response.direct_passthrough
+        or response.status_code < 200 or response.status_code >= 300
+        or response.mimetype not in COMPRESSIBLE
+        or "gzip" not in request.headers.get("Accept-Encoding", "")
+        or "Content-Encoding" in response.headers
+    ):
+        return response
+    body = response.get_data()
+    if len(body) < 1024:
+        return response
+    response.set_data(gzip.compress(body, compresslevel=5))
+    response.headers["Content-Encoding"] = "gzip"
+    response.headers.add("Vary", "Accept-Encoding")
+    return response
 
 
 @app.route("/health")

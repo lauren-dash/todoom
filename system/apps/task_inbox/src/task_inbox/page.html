@@ -11,158 +11,171 @@
   /* Dark by default (the design system's dark palette). */
   :root {
     color-scheme: dark;
-    --fg: hsl(0 0% 95%); --bg: hsl(0 0% 8%); --muted: hsl(0 0% 60%); --dim: hsl(0 0% 60% / .7);
-    --line: hsl(0 0% 95% / .2); --border: hsl(0 0% 25%); --card: hsl(0 0% 12%); --secondary: hsl(0 0% 18%);
-    --green: hsl(120 100% 45%); --amber: hsl(45 100% 55%); --red: hsl(0 100% 55%);
-    --body: ui-monospace, SFMono-Regular, Menlo, monospace;
-    --disp: departureMono, ui-monospace, monospace;
-    --gutter: 24px;
+    --fg: hsl(0 0% 95%); --bg: hsl(0 0% 8%); --muted: hsl(0 0% 60%); --dim: hsl(0 0% 60% / .6);
+    --line: hsl(0 0% 95% / .14); --border: hsl(0 0% 25%); --card: hsl(0 0% 11%); --sel: hsl(0 0% 14%); --secondary: hsl(0 0% 18%);
+    --green: hsl(120 100% 45%); --amber: hsl(45 100% 55%); --red: hsl(0 100% 60%);
+    --body: ui-monospace, SFMono-Regular, Menlo, monospace; --disp: departureMono, ui-monospace, monospace;
   }
   html[data-theme="light"] {
     color-scheme: light;
-    --fg: hsl(0 0% 0%); --bg: hsl(0 0% 100%); --muted: hsl(0 0% 40%); --dim: hsl(0 0% 40% / .7);
-    --line: hsl(0 0% 0% / .2); --border: hsl(0 0% 15%); --card: hsl(0 0% 98%); --secondary: hsl(0 0% 90%);
-    --green: hsl(120 100% 35%); --amber: hsl(45 100% 50%); --red: hsl(0 100% 45%);
+    --fg: hsl(0 0% 0%); --bg: hsl(0 0% 100%); --muted: hsl(0 0% 40%); --dim: hsl(0 0% 40% / .6);
+    --line: hsl(0 0% 0% / .14); --border: hsl(0 0% 15%); --card: hsl(0 0% 97%); --sel: hsl(0 0% 95%); --secondary: hsl(0 0% 90%);
+    --green: hsl(120 100% 30%); --amber: hsl(32 100% 30%); --red: hsl(0 100% 45%);
   }
   * { box-sizing: border-box; border-radius: 0; }
-  body { margin: 0; background: var(--bg); color: var(--fg); font: 400 14px/1.4 var(--body); font-feature-settings: "liga" 0; -webkit-font-smoothing: antialiased; }
-  button { font: inherit; color: inherit; }
+  body { overflow-x: hidden; margin: 0; background: var(--bg); color: var(--fg); font: 400 14px/1.4 var(--body); font-feature-settings: "liga" 0; -webkit-font-smoothing: antialiased; height: 100vh; display: grid; grid-template-rows: auto auto 1fr; }
+  button { font: inherit; color: inherit; background: none; border: 0; cursor: pointer; padding: 0; }
+  ul { list-style: none; margin: 0; padding: 0; }
   .label { font-size: 10px; font-weight: 600; letter-spacing: .16em; text-transform: uppercase; }
+  .tiny { font-size: 11px; color: var(--muted); }
 
   /* Top bar */
-  .shell { position: sticky; top: 0; z-index: 10; display: flex; align-items: center; gap: 22px; padding: 14px var(--gutter) 10px; border-bottom: 2px solid var(--border); background: var(--bg); }
+  header { display: flex; align-items: center; gap: 16px; padding: 12px 20px; border-bottom: 2px solid var(--border); }
   .wordmark { font-family: var(--disp); font-size: 22px; letter-spacing: .06em; }
-  .updated { margin-left: auto; color: var(--muted); font-size: 11px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
-  .btn { border: 1px solid var(--line); background: none; padding: 0 10px; height: 26px; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; cursor: pointer; color: var(--fg); text-decoration: none; display: inline-flex; align-items: center; transition: border-color .15s; }
+  .updated { margin-left: auto; font-size: 11px; color: var(--muted); white-space: nowrap; }
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; line-height: 1; border: 1px solid var(--line); height: 26px; padding: 0 10px; font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--fg); text-decoration: none; transition: border-color .15s; }
   .btn:hover { border-color: var(--fg); }
   .btn:disabled { cursor: default; color: var(--muted); border-color: var(--line); }
-  .btn.icon { width: 26px; padding: 0; justify-content: center; }
-  .tabs { display: none; gap: 18px; padding: 0 var(--gutter); border-bottom: 1px solid var(--line); height: 36px; align-items: center; }
-  .tab { background: none; border: 0; padding: 0 0 2px; cursor: pointer; color: var(--muted); }
-  .tab[aria-selected="true"] { color: var(--fg); box-shadow: inset 0 -2px 0 var(--fg); }
+  .btn.icon { width: 26px; padding: 0; }
+  .btn.primary { background: var(--fg); color: var(--bg); border-color: var(--fg); }
+  .notes { padding: 8px 20px; font-size: 11px; color: var(--amber); border-bottom: 1px solid var(--line); }
+  .notes:empty { padding: 0; border: 0; }  /* stays in the layout so the lists fill the window */
 
-  /* Two columns: Personal left, Work right. Narrow windows switch to tabs. */
-  .columns { display: grid; grid-template-columns: 1fr 1fr; }
-  .column { min-width: 0; }
-  .column + .column { border-left: 2px solid var(--line); }
-  .colhead { position: sticky; top: 60px; z-index: 5; display: flex; align-items: baseline; gap: 12px; padding: 14px var(--gutter) 10px; border-bottom: 1px solid var(--line); background: var(--bg); }
-  .colhead h2 { margin: 0; font-family: var(--disp); font-weight: 400; font-size: 20px; letter-spacing: .04em; }
-  .colhead .n { color: var(--muted); }
-  @media (max-width: 860px) {
-    .tabs { display: flex; }
-    .columns { grid-template-columns: 1fr; }
-    .column + .column { border-left: 0; }
-    .colhead { display: none; }
-    body[data-tab="personal"] #col-work, body[data-tab="work"] #col-personal { display: none; }
-  }
+  /* Sidebar + list */
+  main { display: grid; grid-template-columns: 210px minmax(0, 1fr); min-height: 0; min-width: 0; }
+  .rail { border-right: 1px solid var(--line); display: flex; flex-direction: column; min-height: 0; }
+  nav { padding: 16px 0; display: flex; flex-direction: column; gap: 2px; overflow: auto; flex: 1; }
+  .view { display: flex; justify-content: space-between; padding: 7px 20px; color: var(--muted); text-align: left; }
+  .view:hover { color: var(--fg); }
+  .view[aria-current="true"] { color: var(--fg); box-shadow: inset 2px 0 0 var(--fg); background: var(--card); }
+  .view .n { font-size: 12px; }
+  .view.warn .n { color: var(--amber); }
+  .navsep { height: 1px; background: var(--line); margin: 12px 20px; }
+  .searchbtn { margin: 12px 16px 16px; display: flex; justify-content: space-between; align-items: center; border: 1px solid var(--line); padding: 5px 8px; color: var(--muted); font-size: 13px; text-align: left; }
+  .searchbtn:hover { border-color: var(--fg); color: var(--fg); }
+  /* The weekly recap: a quiet link, not a list, so it sits apart at the bottom. */
+  .recaplink { margin: 0 20px; padding: 6px 0; color: var(--dim); font-size: 12px; text-align: left; }
+  .recaplink:hover, .recaplink[aria-current="true"] { color: var(--fg); }
+  .weeknav { display: inline-flex; gap: 6px; }
+  .view.recaptab { display: none; }
+  .recap-day { padding: 18px 24px 6px; font-size: 10px; letter-spacing: .14em; text-transform: uppercase; color: var(--muted); border-bottom: 1px solid var(--line); }
+  .recap-item { display: block; width: 100%; text-align: left; padding: 9px 24px; border-bottom: 1px solid var(--line); }
+  .recap-item:hover { background: var(--sel); }
+  .recap-item .rt { display: block; font-weight: 600; }
+  .recap-item .rm { display: block; font-size: 11px; color: var(--muted); margin-top: 2px; }
+  .kbd { font-size: 10px; border: 1px solid var(--line); padding: 1px 5px; color: var(--muted); white-space: nowrap; }
 
-  ul { list-style: none; margin: 0; padding: 0; }
-  li.task { display: grid; grid-template-columns: 22px 1fr auto; gap: 4px 12px; padding: 14px var(--gutter); border-bottom: 1px solid var(--line); align-items: start; }
-  li.task input[type=checkbox] { appearance: none; width: 16px; height: 16px; margin: 1px 0 0; border: 2px solid var(--fg); background: var(--bg); cursor: pointer; display: grid; place-content: center; }
+  section.list { overflow: auto; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+  section.list > .split { flex: 1 0 auto; }
+  .listhead { padding: 18px 24px 12px; display: flex; align-items: baseline; gap: 14px; border-bottom: 1px solid var(--line); position: sticky; top: 0; background: var(--bg); z-index: 3; }
+  .listhead h1 { margin: 0; font-family: var(--disp); font-weight: 400; font-size: 24px; letter-spacing: .04em; }
+  .listhead .sub { color: var(--muted); font-size: 12px; }
+  .listhead .right { margin-left: auto; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; }
+  .split > div { min-width: 0; }
+  .split > div + div { border-left: 1px solid var(--line); }
+  .colhead { padding: 14px 24px 8px; border-bottom: 1px solid var(--line); }
+  .colhead h2 { margin: 0; font-family: var(--disp); font-weight: 400; font-size: 18px; letter-spacing: .04em; }
+  .clear { padding: 28px 24px; color: var(--muted); }
+  .todaytabs { display: none; gap: 22px; padding: 0 14px; border-bottom: 1px solid var(--line); }
+  .todaytab { padding: 12px 0 10px; color: var(--muted); font-family: var(--disp); font-size: 16px; letter-spacing: .04em; }
+  .todaytab[aria-selected="true"] { color: var(--fg); box-shadow: inset 0 -2px 0 var(--fg); }
+
+  /* Quiet rows: title + one line. Actions sit on that line and fade in on hover,
+     so nothing moves as you scroll past. */
+  li.task { display: grid; grid-template-columns: 20px 1fr auto; gap: 2px 12px; padding: 9px 24px; border-bottom: 1px solid var(--line); align-items: start; position: relative; transition: opacity .45s ease; }
+  li.task:hover { background: var(--sel); }
+  li.task input[type=checkbox] { appearance: none; width: 14px; height: 14px; margin: 2px 0 0; border: 1.5px solid var(--fg); background: var(--bg); cursor: pointer; display: grid; place-content: center; }
   li.task input[type=checkbox]:checked { background: var(--fg); }
-  li.task input[type=checkbox]:checked::after { content: ""; width: 8px; height: 4px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
+  li.task input[type=checkbox]:checked::after { content: ""; width: 7px; height: 3px; border: solid var(--bg); border-width: 0 0 2px 2px; transform: translateY(-1px) rotate(-45deg); }
   li.task input[type=checkbox]:focus-visible { outline: 2px solid var(--fg); outline-offset: 2px; }
+  .title { justify-self: start; max-width: 100%; min-width: 4ch; font-weight: 600; outline: none; cursor: text; margin: 0 -4px; padding: 0 4px; text-decoration: line-through; text-decoration-color: transparent; text-decoration-thickness: 2px; transition: text-decoration-color .3s ease .1s, color .3s ease .1s; }
+  .title:hover { background: color-mix(in srgb, var(--fg) 6%, transparent); }
+  .title:focus { background: var(--card); box-shadow: inset 0 -1px 0 var(--fg); }
   /* Checking a task off: the box pops, the check mark draws in, the title is struck through and the row fades. */
-  li.task { transition: opacity .45s ease; }
-  li.task .title { text-decoration: line-through; text-decoration-color: transparent; text-decoration-thickness: 2px; transition: text-decoration-color .3s ease .1s, color .3s ease .1s; }
   li.task.completing { opacity: .35; }
-  li.task.completing .title { text-decoration-color: var(--dim); color: var(--dim); }
+  li.task.completing .title, li.task.checked .title { text-decoration-color: var(--dim); color: var(--dim); }
+  li.task.checked { opacity: .45; }
+  li.task.checked .title { pointer-events: none; transition: none; }
+  /* After its moment crossed off, a done task fades and the gap closes. */
+  li.task.leaving { overflow: hidden; animation: leave .7s ease-in forwards; }
+  @keyframes leave { 0% { opacity: .45; max-height: var(--h); } 45% { opacity: 0; max-height: var(--h); } 100% { opacity: 0; max-height: 0; padding-top: 0; padding-bottom: 0; border-bottom-width: 0; } }
   li.task.completing input[type=checkbox] { animation: check-pop .28s ease-out; }
   li.task.completing input[type=checkbox]::after { animation: check-draw .22s ease-out .05s both; }
   @keyframes check-pop { 0% { transform: scale(1); } 45% { transform: scale(1.3); } 100% { transform: scale(1); } }
   @keyframes check-draw { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
-  @media (prefers-reduced-motion: reduce) { li.task, li.task .title { transition: none; } li.task.completing input[type=checkbox], li.task.completing input[type=checkbox]::after { animation: none; } }
-  .title { font-weight: 600; }
-  .why { color: var(--muted); font-size: 13px; margin-top: 2px; }
-  .meta { grid-column: 2 / 4; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; margin-top: 6px; font-size: 11px; color: var(--muted); }
-  .src { letter-spacing: .12em; text-transform: uppercase; font-size: 10px; }
-  .src b { color: var(--fg); font-weight: 600; }
-  .lnk { background: none; border: 0; padding: 0; cursor: pointer; color: var(--fg); font-size: 11px; text-decoration: none; box-shadow: inset 0 -1px 0 var(--line); transition: box-shadow .15s; }
-  .lnk:hover { box-shadow: inset 0 -1px 0 var(--fg); }
-  .due { font-size: 10px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; white-space: nowrap; border: 1px solid var(--fg); padding: 2px 6px; }
-  .due.soon { border-color: var(--red); color: var(--red); }
-  li.task.checked .title { text-decoration-color: var(--dim); color: var(--dim); transition: none; }
-  li.task.checked .why, li.task.checked .meta { opacity: .55; }
-  .clears { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); white-space: nowrap; }
-  .done-head { padding: 18px var(--gutter) 8px; color: var(--muted); border-bottom: 1px solid var(--line); }
-  .empty { padding: 36px var(--gutter); color: var(--muted); }
-  .notes { padding: 12px var(--gutter); font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--amber); font-weight: 600; }
-  .notes:empty { display: none; }
-  .flag { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; border: 1px solid var(--line); padding: 1px 5px; }
-  .flag.warn { color: var(--amber); border-color: var(--amber); }
-  .add-row { padding: 10px var(--gutter); border-bottom: 1px solid var(--line); }
-  .live { outline: none; cursor: text; border-radius: 0; margin: 0 -4px; padding: 0 4px; }
-  .live:hover { background: var(--card); }
-  .live:focus { background: var(--card); box-shadow: inset 0 -1px 0 var(--fg); }
-  .why.live:empty:not(:focus)::before { content: attr(data-placeholder); color: var(--dim); opacity: 0; }
-  li.task:hover .why.live:empty::before, .live:empty:focus::before { content: attr(data-placeholder); color: var(--dim); opacity: 1; }
-  .title.live:empty::before { content: attr(data-placeholder); color: var(--dim); }
-  li.task.checked .live { pointer-events: none; }
-  .row-actions { display: inline-flex; gap: 14px; opacity: 0; transition: opacity .15s; }
-  li.task:hover .row-actions, li.task:focus-within .row-actions { opacity: 1; }
-  .lnk.danger { color: var(--red); }
-  .lnk.do-it { color: var(--green); box-shadow: inset 0 -1px 0 var(--green); }
-  .flag.agent { color: var(--green); border-color: var(--green); }
-  .delegate { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; margin-top: 6px; }
-  .note-in { width: 100%; resize: vertical; font: inherit; font-size: 13px; color: var(--fg); background: var(--card); border: 1px solid var(--line); padding: 6px 8px; }
-  .note-in:focus { outline: none; border-color: var(--fg); }
-  .hint { font-size: 11px; color: var(--muted); }
-  .removed-row { padding: 12px var(--gutter); border-bottom: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 8px; }
-  .removed-head { display: flex; align-items: baseline; gap: 12px; }
-  .removed-title { color: var(--dim); text-decoration: line-through; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .removed-row .in { flex: 1; font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; }
-  .removed-row .in:focus { outline: none; border-color: var(--fg); }
-  .form-row { display: flex; gap: 8px; align-items: center; }
-  .due-wrap { position: relative; }
-  .due { background: none; cursor: pointer; font-family: inherit; color: var(--fg); }
-  .add-due { opacity: 0; border-color: var(--line); color: var(--muted); }
-  li.task:hover .add-due, .add-due:focus { opacity: 1; }
-  .date-picker { position: absolute; right: 0; bottom: 0; width: 1px; height: 1px; opacity: 0; border: 0; padding: 0; }
+  li.task.flash { animation: flash 1.4s ease-out; }
+  @keyframes flash { 0%, 30% { background: var(--secondary); } 100% { background: transparent; } }
+  @media (prefers-reduced-motion: reduce) { li.task, .title { transition: none; } li.task.completing input[type=checkbox], li.task.completing input[type=checkbox]::after, li.task.flash, li.task.leaving { animation: none; } }
+  .chip { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; color: var(--muted); transition: opacity .12s; }
+  .chip.today { color: var(--red); font-weight: 600; }
+  .chip.late { color: var(--amber); }
+  .chip.agent-on { color: var(--green); }
+  /* The actions have their own line under the task, held open while hidden,
+     so hovering never moves anything. */
+  .actions { grid-column: 2 / 4; display: flex; gap: 16px; font-size: 11px; line-height: 16px; min-height: 16px; opacity: 0; pointer-events: none; transition: opacity .12s; }
+  li.task:hover .actions, li.task:focus-within .actions { opacity: 1; pointer-events: auto; }
+  .actions button, .actions .due-pick > span, .v-acts button, .v-acts .due-pick > span { color: var(--fg); box-shadow: inset 0 -1px 0 var(--line); white-space: nowrap; }
+  .actions button:hover, .v-acts button:hover { box-shadow: inset 0 -1px 0 var(--fg); }
+  .actions .agent, .v-acts .agent { color: var(--green); box-shadow: inset 0 -1px 0 var(--green); }
+  .actions .nt, .v-acts .nt { color: var(--muted); box-shadow: none; }
+  .actions .nt:hover, .v-acts .nt:hover { color: var(--red); }
+  /* Overdue and Snoozed are for deciding, so their actions always show, on a line of their own. */
+  .decide .actions { opacity: 1; pointer-events: auto; }
+  /* The date field sits invisibly over its label, so a real click opens the browser's
+     own calendar (opening it from code is blocked inside Studio's app frames). */
+  .due-pick { position: relative; display: inline-flex; }
+  .due-pick input[type=date] { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; border: 0; padding: 0; margin: 0; cursor: pointer; font: inherit; }
+  .due-pick input[type=date]::-webkit-calendar-picker-indicator { position: absolute; inset: 0; width: auto; height: auto; margin: 0; padding: 0; cursor: pointer; }
+  .menu { position: absolute; left: 56px; top: calc(100% - 6px); z-index: 5; background: var(--bg); border: 1.5px solid var(--fg); box-shadow: 4px 4px 0 color-mix(in srgb, var(--fg) 15%, transparent); display: flex; flex-direction: column; min-width: 170px; }
+  .menu button { text-align: left; padding: 7px 12px; font-size: 12px; }
+  .menu button:hover { background: var(--sel); }
+  .add-row { padding: 8px 24px; border-bottom: 1px solid var(--line); }
   .add-in { width: 100%; font: inherit; font-size: 13px; color: var(--fg); background: none; border: 0; padding: 4px 0; outline: none; }
   .add-in::placeholder { color: var(--muted); }
   .add-in:focus { box-shadow: inset 0 -1px 0 var(--fg); }
-  .also { margin-top: 14px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  .in { flex: 1; font: inherit; font-size: 13px; color: var(--fg); background: var(--bg); border: 1px solid var(--line); padding: 6px 8px; }
+  .in:focus { outline: none; border-color: var(--fg); }
+  .slip { grid-column: 2 / 4; display: flex; flex-direction: column; gap: 8px; margin-top: 8px; }
+  .form-row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  textarea.in { resize: vertical; }
+  .removed-row { padding: 10px 24px; border-bottom: 1px solid var(--line); background: var(--card); display: flex; flex-direction: column; gap: 8px; transition: opacity 1.5s ease; }
+  .removed-row.fading { opacity: 0; }
+  .removed-head { display: flex; align-items: baseline; gap: 12px; }
+  .removed-title { color: var(--dim); text-decoration: line-through; flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .lnk { color: var(--fg); box-shadow: inset 0 -1px 0 var(--line); font-size: 11px; }
+  .finish { padding: 80px 24px; text-align: center; }
+  .finish h2 { font-family: var(--disp); font-weight: 400; font-size: 34px; margin: 0 0 10px; letter-spacing: .04em; }
+  .finish p { color: var(--muted); margin: 4px 0; }
 
-  /* Original-message panel */
-  .scrim { position: fixed; inset: 0; background: hsl(0 0% 0% / .35); display: none; z-index: 20; }
-  .panel { position: fixed; top: 16px; right: 16px; bottom: 16px; z-index: 21; width: min(540px, calc(100vw - 32px)); background: var(--bg); border: 2px solid var(--fg); box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--fg) 18%, transparent); display: none; flex-direction: column; }
-  .open .scrim { display: block; } .open .panel { display: flex; }
-  .panel-head { display: flex; align-items: center; gap: 12px; height: 34px; padding: 0 10px 0 14px; border-bottom: 2px solid var(--fg); }
-  .panel-head .asof { margin-left: auto; color: var(--muted); }
-  .panel-main { padding: 16px 14px; overflow: auto; flex: 1; }
-  .panel h3 { margin: 0 0 14px; font-size: 15px; }
+  /* View: the original message inside TODOOM, with a way out to where it lives. */
+  .scrim { position: fixed; inset: 0; background: hsl(0 0% 0% / .6); backdrop-filter: blur(2px); display: none; z-index: 20; }
+  .viewing .scrim, .spotting .scrim { display: block; }
+  .viewer { position: fixed; top: 8vh; left: 50%; transform: translateX(-50%); width: min(640px, 92vw); max-height: 84vh; z-index: 21; background: var(--bg); border: 2px solid var(--fg); box-shadow: 6px 6px 0 color-mix(in srgb, var(--fg) 12%, transparent); display: none; flex-direction: column; }
+  .viewing .viewer { display: flex; }
+  .v-head { display: flex; align-items: center; gap: 12px; padding: 0 10px 0 14px; height: 36px; border-bottom: 2px solid var(--fg); }
+  .v-head .tiny { margin-left: auto; }
+  .v-main { padding: 16px; overflow: auto; flex: 1; }
+  .v-main h3 { margin: 0 0 6px; font-size: 15px; }
+  .v-why { color: var(--muted); font-size: 13px; margin: 0 0 14px; }
+  .v-why:empty { display: none; }
   .rawbody { white-space: pre-wrap; font-size: 13px; border: 1px solid var(--line); background: var(--card); padding: 12px; }
-  .chat { display: flex; flex-direction: column; gap: 12px; }
+  .chat { display: flex; flex-direction: column; gap: 10px; }
   .msg { max-width: 88%; } .msg.me { align-self: flex-end; text-align: right; }
   .msg .who { font-size: 10px; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); margin-bottom: 3px; }
   .msg .bubble { display: inline-block; text-align: left; white-space: pre-wrap; border: 1px solid var(--line); background: var(--card); padding: 8px 10px; font-size: 13px; }
-  .msg.me .bubble { background: var(--secondary); }
-  .msg.this .bubble { border: 2px solid var(--fg); }
-  .panel-foot { display: flex; gap: 8px; padding: 10px 14px; border-top: 1px solid var(--line); }
-  .panel-foot[hidden] { display: none; }
-  details { margin-top: 16px; } summary { cursor: pointer; }
-  pre { font: 11px/1.4 var(--body); white-space: pre-wrap; word-break: break-word; color: var(--muted); }
+  .msg.me .bubble { background: var(--secondary); } .msg.this .bubble { border: 2px solid var(--fg); }
+  .also { margin-top: 14px; font-size: 12px; color: var(--muted); display: flex; flex-direction: column; gap: 4px; }
+  .v-foot { padding: 12px 14px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
+  .v-acts { display: flex; gap: 16px; flex-wrap: wrap; font-size: 12px; align-items: center; }
+  .v-acts .tiny { margin-right: -6px; }
+  .v-foot a[hidden] { display: none; }
+  .open-src { height: 30px; padding: 0 14px; border-color: color-mix(in srgb, var(--fg) 45%, transparent); }
+  .open-src:hover { background: var(--fg); color: var(--bg); border-color: var(--fg); }
 
-  /* Search: a box in the top bar filters both columns as you type. */
-  .search { position: relative; flex: 0 1 320px; min-width: 120px; display: flex; align-items: center; }
-  .search-in { width: 100%; height: 28px; font: inherit; font-size: 13px; color: var(--fg); background: var(--card); border: 1px solid var(--line); padding: 0 86px 0 8px; outline: none; }
-  .search-in:focus { border-color: var(--fg); }
-  .search-in::placeholder { color: var(--muted); }
-  .search-in::-webkit-search-cancel-button { display: none; }
-  .search .kbd { position: absolute; right: 6px; pointer-events: none; }
-  .search-in:not(:placeholder-shown) ~ .kbd { display: none; }
-  .search-clear { position: absolute; right: 4px; border: 0; background: none; cursor: pointer; color: var(--muted); padding: 0 4px; height: 24px; }
-  .search-in:placeholder-shown ~ .search-clear { display: none; }
-  .kbd { font-size: 10px; letter-spacing: .08em; color: var(--muted); border: 1px solid var(--line); padding: 1px 5px; white-space: nowrap; }
-  mark { background: none; color: inherit; box-shadow: inset 0 -2px 0 var(--amber); }
-  li.task.flash { animation: flash 1.4s ease-out; }
-  @keyframes flash { 0%, 30% { background: var(--secondary); } 100% { background: transparent; } }
-
-  /* Spotlight-style search (Option-Space): a box in the middle of the window,
-     results listed underneath as you type, arrow keys to move, Enter to jump. */
-  .spot-scrim { position: fixed; inset: 0; z-index: 30; background: hsl(0 0% 0% / .35); display: none; }
-  .spot { position: fixed; z-index: 31; top: 14vh; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 32px)); background: var(--bg); border: 2px solid var(--fg); box-shadow: 4px 4px 0 0 color-mix(in srgb, var(--fg) 18%, transparent); display: none; flex-direction: column; max-height: 72vh; }
-  .spotting .spot-scrim { display: block; } .spotting .spot { display: flex; }
+  /* Search (Option-Space, or the box in the sidebar): results listed under the box. */
+  .spot { position: fixed; z-index: 31; top: 14vh; left: 50%; transform: translateX(-50%); width: min(640px, calc(100vw - 32px)); background: var(--bg); border: 2px solid var(--fg); box-shadow: 6px 6px 0 color-mix(in srgb, var(--fg) 12%, transparent); display: none; flex-direction: column; max-height: 72vh; }
+  .spotting .spot { display: flex; }
   .spot-head { display: flex; align-items: center; gap: 10px; padding: 0 14px; border-bottom: 1px solid var(--line); }
   .spot-in { flex: 1; height: 52px; font: inherit; font-size: 20px; color: var(--fg); background: none; border: 0; outline: none; }
   .spot-in::placeholder { color: var(--muted); }
@@ -173,225 +186,334 @@
   .spot-item[aria-selected="true"] { background: var(--secondary); border-left-color: var(--fg); }
   .spot-item .st { font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spot-item.done .st { text-decoration: line-through; color: var(--dim); }
-  .spot-item .sw { grid-column: 1 / 3; color: var(--muted); font-size: 12px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
   .spot-item .ss { color: var(--muted); font-size: 10px; letter-spacing: .12em; text-transform: uppercase; white-space: nowrap; }
   .spot-foot { display: flex; gap: 14px; padding: 8px 14px; border-top: 1px solid var(--line); color: var(--muted); font-size: 11px; }
   .spot-empty { padding: 16px 14px; color: var(--muted); }
+  mark { background: none; color: inherit; box-shadow: inset 0 -2px 0 var(--amber); }
+
+  /* Narrow windows: the sidebar becomes a row along the top, and Today stacks. */
+  @media (max-width: 860px) {
+    main { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+    .rail { border-right: 0; border-bottom: 1px solid var(--line); flex-direction: row; align-items: center; min-width: 0; }
+    nav { flex-direction: row; padding: 0; overflow-x: auto; min-width: 0; scrollbar-width: none; }
+    .view { flex: none; }
+    .view { padding: 10px 12px; gap: 6px; } .view[aria-current="true"] { box-shadow: inset 0 -2px 0 var(--fg); }
+    .navsep { display: none; }
+    .recaplink { display: none; } .view.recaptab { display: flex; }
+    .searchbtn { margin: 6px 12px; gap: 8px; }
+    .split { grid-template-columns: 1fr; } .split > div + div { border-left: 0; }
+    .todaytabs { display: flex; }
+    .split .colhead { display: none; }
+    .split[data-tab="personal"] > [data-col="work"], .split[data-tab="work"] > [data-col="personal"] { display: none; }
+  }
+  @media (max-width: 560px) {
+    header { padding: 10px 14px; gap: 10px; }
+    .updated { font-size: 10px; }
+    .searchbtn { flex: none; margin: 6px 10px; } .searchbtn .kbd { display: none; }
+    .listhead, .colhead, .add-row, .recap-day, .recap-item { padding-left: 14px; padding-right: 14px; }
+    .listhead { flex-wrap: wrap; } .listhead .right { margin-left: 0; }
+    li.task { grid-template-columns: 20px minmax(0, 1fr); padding: 10px 14px; }
+    li.task .chip { grid-column: 2; grid-row: 2; }
+    li.task .chip:empty { display: none; }
+    .title { overflow-wrap: anywhere; }
+    /* No hover on a phone: tapping a task (not its text) opens View, which has the actions. */
+    li.task:not(.decide) .actions { display: none; }
+    li.task:hover { background: none; }
+    .decide .actions { grid-column: 2; grid-row: 3; flex-wrap: wrap; gap: 10px 18px; padding-top: 4px; }
+    .v-acts { gap: 10px 18px; }
+  }
 </style>
 </head>
-<body data-tab="personal">
-<header class="shell">
+<body>
+<header>
   <span class="wordmark">TODOOM</span>
-  <label class="search">
-    <input class="search-in" id="search" type="search" placeholder="Search" aria-label="Search tasks" autocomplete="off" spellcheck="false">
-    <span class="kbd" title="Option-Space opens search from anywhere in this window">Opt Space</span>
-    <button class="search-clear" id="search-clear" type="button" aria-label="Clear search">×</button>
-  </label>
   <span class="updated" id="updated"></span>
   <button class="btn icon" id="theme" type="button"></button>
   <button class="btn" id="refresh" type="button">Refresh</button>
 </header>
-<nav class="tabs" role="tablist">
-  <button class="tab label" id="tab-personal" role="tab" data-tab="personal">Personal <span class="n" id="tabcount-personal"></span></button>
-  <button class="tab label" id="tab-work" role="tab" data-tab="work">Work <span class="n" id="tabcount-work"></span></button>
-</nav>
 <div class="notes" id="notes"></div>
-<main class="columns">
-  <section class="column" id="col-personal" data-tab="personal">
-    <div class="colhead"><h2>PERSONAL</h2><span class="label n" id="count-personal"></span></div>
-    <ul class="open-list"></ul>
-    <div class="done-head label" hidden>Done &middot; clears after a day</div>
-    <ul class="done-list"></ul>
-  </section>
-  <section class="column" id="col-work" data-tab="work">
-    <div class="colhead"><h2>WORK</h2><span class="label n" id="count-work"></span></div>
-    <ul class="open-list"></ul>
-    <div class="done-head label" hidden>Done &middot; clears after a day</div>
-    <ul class="done-list"></ul>
-  </section>
+<main>
+  <aside class="rail">
+    <nav id="nav" aria-label="Lists"></nav>
+    <button class="recaplink" id="open-recap" type="button">Weekly recap</button>
+    <button class="searchbtn" id="open-search" type="button"><span>Search</span><span class="kbd">Opt Space</span></button>
+  </aside>
+  <section class="list" id="list"></section>
 </main>
 <div class="scrim" id="scrim"></div>
-<aside class="panel" id="panel" aria-label="Original message">
-  <div class="panel-head"><span class="label" id="panel-src"></span><span class="label asof" id="panel-sub"></span><button class="btn" id="panel-close" type="button">Close</button></div>
-  <div class="panel-main">
-    <h3 id="panel-title"></h3>
-    <div id="panel-body"></div>
-    <div class="also" id="panel-also" hidden></div>
-    <details><summary class="label">Full record</summary><pre id="panel-raw"></pre></details>
-  </div>
-  <div class="panel-foot"><a class="btn" id="panel-go" target="_blank" rel="noopener"></a></div>
-</aside>
-<div class="spot-scrim" id="spot-scrim"></div>
+<div class="viewer" id="viewer" role="dialog" aria-label="Original message">
+  <div class="v-head"><span class="label" id="v-src"></span><span class="tiny" id="v-sub"></span><button class="btn" id="v-close" type="button">Close</button></div>
+  <div class="v-main"><h3 id="v-title"></h3><p class="v-why" id="v-why"></p><div id="v-body"></div><div class="also" id="v-also" hidden></div></div>
+  <div class="v-foot" id="v-foot"><div class="v-acts" id="v-acts"></div><a class="btn open-src" id="v-open" target="_blank" rel="noopener"></a></div>
+</div>
 <div class="spot" id="spot" role="dialog" aria-label="Search tasks">
   <div class="spot-head">
     <span class="label">Search</span>
     <input class="spot-in" id="spot-in" type="text" placeholder="Search your tasks" aria-label="Search your tasks" autocomplete="off" spellcheck="false" role="combobox" aria-controls="spot-list" aria-expanded="true">
   </div>
   <div class="spot-list" id="spot-list" role="listbox"></div>
-  <div class="spot-foot"><span>↑↓ to move</span><span>Enter to go to the task</span><span>Cmd Enter to open the original</span><span>Esc to close</span></div>
+  <div class="spot-foot"><span>↑↓ to move</span><span>Enter to go to the task</span><span>Cmd Enter to view it</span><span>Esc to close</span></div>
 </div>
 <script>
 let DATA = { tasks: [] };
-const SOURCES = {
-  email: "Gmail", slack: "Slack", "google-docs": "Google Docs", notion: "Notion", whatsapp: "WhatsApp", text: "Messages",
-  manual: "Added by you",
-};
+const SOURCES = { email: "Gmail", slack: "Slack", "google-docs": "Google Docs", notion: "Notion", whatsapp: "WhatsApp", text: "Messages", manual: "You" };
 const TABS = ["personal", "work"];
+// "Do it for me" only where an agent can actually do the thing.
+const AGENT_OK = /\b(rsvp|pay|sign up|schedule|book|order|activate|renew|register|buy|cancel|return|transfer|venmo|confirm)\b/i;
+const TODAY_PER_TAB = 5;
+let view = "today";
+let todayTab = "personal";   // which half of Today a narrow screen shows
+let menuFor = null;          // task id whose snooze menu is open
+const removed = new Map();   // "Not a task" this session: shown as a slip to add a reason or undo
+const delegating = new Set(); // "Do it for me" slips open
 
-function fmtDate(v) {
-  if (!v) return "";
-  const d = /^\d+(\.\d+)?$/.test(String(v)) ? new Date(parseFloat(v) * 1000) : new Date(v);
-  return isNaN(d) ? "" : d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
-}
-function dueLabel(due) {
-  return "Due " + new Date(due + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" });
-}
-function dueSoon(due) { return new Date(due + "T23:59:59") - Date.now() < 2 * 86400000; }
-function rawText(t) {
-  const r = t.raw;
-  if (t.source === "email") return r.body || r.snippet;
-  if (t.source === "google-docs") return "On: “" + ((r.comment.quotedFileContent || {}).value || "") + "”\n\n" + r.comment.author.displayName + ": " + r.comment.content + (r.comment.replies || []).map(x => "\n\n" + x.author.displayName + ": " + x.content).join("");
-  if (t.source === "notion") return r["Write a task"].replace(/<[^>]+>/g, "").trim() + (r.Day ? "\n\nDay: " + r.Day : "");
-  return r.text;
-}
+function localDay(d = new Date()) { return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 10); }
+function addDays(n) { const d = new Date(); d.setDate(d.getDate() + n); return localDay(d); }
+function daysBetween(a, b) { return Math.round((new Date(b + "T12:00:00") - new Date(a + "T12:00:00")) / 86400000); }
+function ageDays(t) { return t.date ? (Date.now() - new Date(t.date)) / 86400000 : 0; }
+function lateDays(t) { return t.due ? daysBetween(t.due, localDay()) : null; }
 function el(tag, attrs, ...kids) {
   const n = document.createElement(tag);
   Object.entries(attrs || {}).forEach(([k, v]) => k === "class" ? n.className = v : k.startsWith("on") ? n.addEventListener(k.slice(2), v) : n.setAttribute(k, v));
   kids.flat().forEach(k => k != null && n.append(k));
   return n;
 }
-function clearsLabel(t) {
-  const hours = Math.max(0, (new Date(t.clears_at) - Date.now()) / 3600000);
-  return hours < 1 ? "Clears <1h" : "Clears in " + Math.round(hours) + "h";
+// Look-later tasks are titled by what the message says, not by who sent it.
+function shownTitle(t) {
+  if (!t.edited && /^look at .*message/i.test(t.title || "")) {
+    const q = (t.why || "").match(/"([^"]+)"/);
+    const text = q ? q[1].split(/\s+/).filter(w => !/[\/]|\.[a-z]{2,}/i.test(w)).join(" ").trim() : "";
+    if (text) { const w = text.split(/\s+/); return "Review: " + w.slice(0, 8).join(" ") + (w.length > 8 ? "…" : ""); }
+  }
+  return t.title;
 }
-// Tasks removed as "not a task" this session: shown as a slip to add a reason or undo.
-const removed = new Map();
-function removedRow(t) {
-  const reason = el("input", { class: "in reason", placeholder: "Why isn't this a task? (optional, helps it learn)", "aria-label": "Why this isn't a task" });
-  reason.value = removed.get(t.id).reason || "";
-  const save = async () => {
-    const r = reason.value.trim();
-    if (await api("PATCH", "/api/tasks/" + encodeURIComponent(t.id) + "/dismiss", { reason: r })) { removed.get(t.id).reason = r; removed.get(t.id).saved = true; render(); }
-  };
-  reason.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") { removed.delete(t.id); render(); } });
-  const info = removed.get(t.id);
-  return el("li", { class: "removed-row", id: "removed-" + t.id },
-    el("div", { class: "removed-head" },
-      el("span", { class: "label" }, "Removed"),
-      el("span", { class: "removed-title" }, t.title),
-      el("button", { type: "button", class: "lnk", onclick: () => undismiss(t) }, "Undo"),
-      el("button", { type: "button", class: "lnk", "aria-label": "Close", onclick: () => { removed.delete(t.id); render(); } }, "×")),
-    info.saved
-      ? el("div", { class: "why" }, info.reason ? "Noted: “" + info.reason + "”. Future refreshes will skip tasks like this." : "Future refreshes will skip tasks like this.")
-      : el("div", { class: "form-row" }, reason, el("button", { type: "button", class: "btn", onclick: save }, "Save")),
-  );
+function isSnoozed(t) { return !!t.snoozed && (!t.snoozed.until || t.snoozed.until > localDay()); }
+function isOverdue(t) { const l = lateDays(t); return (l !== null && l > 7) || (!t.due && ageDays(t) > 14); }
+function inToday(t) { const l = lateDays(t); return (l !== null && l >= 0 && l <= 7) || ageDays(t) < 1.5 || (t.snoozed && t.snoozed.until && !isSnoozed(t)); }
+function isOpen(t) { return !t.checked_at && !isSnoozed(t); }
+function stays(t) { return isOpen(t) || (lingering.has(t.id) && !isSnoozed(t)); }
+function byLate(a, b) { return (lateDays(b) ?? -99) - (lateDays(a) ?? -99) || ((a.date || "") < (b.date || "") ? 1 : -1); }
+function byDue(a, b) { const x = a.due || "9", y = b.due || "9"; return x < y ? -1 : x > y ? 1 : ((a.date || "") < (b.date || "") ? 1 : -1); }
+// What each list holds. A task you just checked keeps its place, crossed off, until it fades.
+function listFor(v, tab) {
+  // A task just marked "Not a task" keeps its place, shown as the reason slip, until the slip fades.
+  const shown = new Set(DATA.tasks.map(t => t.id));
+  const ts = [...DATA.tasks, ...[...removed.values()].map(r => r.task).filter(t => !shown.has(t.id))];
+  // Tasks you add (with no due date) go to the bottom of the list you added them in,
+  // in the order you added them, and never count against Today's cap.
+  const added = t => t.source === "manual" && !t.due;
+  const oldestFirst = (a, b) => ((a.date || "") < (b.date || "") ? -1 : 1);
+  if (v === "today") {
+    const pick = t => t.tab === tab && !isOverdue(t) && inToday(t);
+    const open = ts.filter(t => stays(t) && pick(t));
+    return [...open.filter(t => !added(t)).sort(byLate).slice(0, TODAY_PER_TAB), ...open.filter(added).sort(oldestFirst)];
+  }
+  if (v === "personal" || v === "work") {
+    const open = ts.filter(t => stays(t) && t.tab === v && !isOverdue(t));
+    return [...open.filter(t => !added(t)).sort(byDue), ...open.filter(added).sort(oldestFirst)];
+  }
+  if (v === "overdue") return ts.filter(t => stays(t) && isOverdue(t)).sort(byLate);
+  if (v === "snoozed") return ts.filter(t => (!t.checked_at || lingering.has(t.id)) && isSnoozed(t));
+  return [];
 }
+function count(v) {
+  const live = t => !t.checked_at && !removed.has(t.id);
+  return v === "today" ? TABS.reduce((n, tab) => n + listFor("today", tab).filter(t => isOpen(t) && live(t)).length, 0) : listFor(v).filter(live).length;
+}
+function chipText(t) {
+  if (isSnoozed(t)) return [t.snoozed.until ? "Until " + new Date(t.snoozed.until + "T12:00:00").toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "Snoozed", ""];
+  const l = lateDays(t);
+  if (l === null) return isOverdue(t) ? ["No date · " + Math.round(ageDays(t)) + "d", ""] : ["", ""];
+  if (l === 0) return ["Due today", "today"];
+  if (l > 0) return [l + "d late", "late"];
+  return [new Date(t.due + "T12:00:00").toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" }), ""];
+}
+function when(t) {
+  if (!t.date) return "";
+  const d = ageDays(t);
+  return d < 1 ? "today" : d < 2 ? "yesterday" : Math.round(d) + "d ago";
+}
+function showNote(text) { document.getElementById("notes").textContent = text; }
+
+// ---- talking to the app
+async function api(method, url, body) {
+  const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
+  if (!r.ok) { const e = await r.json().catch(() => ({})); showNote(e.error ? "Couldn't save: " + e.error + "." : "Couldn't save that. Try again."); return null; }
+  showNote(LONG_NOTE); return r.json().catch(() => ({}));
+}
+const enc = encodeURIComponent;
+// A task just added may still be saving; anything done to it waits for that save.
+async function settled(t) { if (t.saving) await t.saving; }
+async function patch(t, fields) { Object.assign(t, fields); await settled(t); if (await api("PATCH", "/api/tasks/" + enc(t.id), fields)) await load(); }
+async function snooze(ids, until) { if (await api("POST", "/api/snooze", { ids, until })) { menuFor = null; await load(); } }
+async function unsnooze(t) { if (await api("DELETE", "/api/tasks/" + enc(t.id) + "/snooze")) await load(); }
+async function setDue(t, due) {
+  if (t.snoozed) await api("DELETE", "/api/tasks/" + enc(t.id) + "/snooze");
+  await patch(t, { due: due || null });
+}
+async function removeTask(t) { if (confirm("Delete “" + t.title + "”?") && (await settled(t), await api("DELETE", "/api/tasks/" + enc(t.id)))) await load(); }
 async function dismiss(t) {
-  if (!(await api("POST", "/api/tasks/" + encodeURIComponent(t.id) + "/dismiss", {}))) return;
-  removed.set(t.id, { task: t, reason: "", saved: false });
+  if (!(await api("POST", "/api/tasks/" + enc(t.id) + "/dismiss", {}))) return;
+  removed.set(t.id, { task: t, reason: "", saved: false, deadline: Date.now() + SLIP_MS, paused: false, fading: false });
   await load();
-  const box = document.querySelector("#removed-" + CSS.escape(t.id) + " .reason");
+  const box = document.querySelector("#removed-" + CSS.escape(t.id) + " .in");
   if (box) box.focus();
 }
-async function undismiss(t) {
-  if (await api("DELETE", "/api/tasks/" + encodeURIComponent(t.id) + "/dismiss")) { removed.delete(t.id); await load(); }
+async function undismiss(t) { if (await api("DELETE", "/api/tasks/" + enc(t.id) + "/dismiss")) { removed.delete(t.id); await load(); } }
+const COMPLETE_MS = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 750;
+// A task you check stays crossed off long enough to undo a slip, then fades away.
+const LINGER_MS = 5000, LEAVE_MS = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 700;
+const lingering = new Map();  // task id -> its pending fade timer
+const leaving = new Map();  // task id -> its height as it starts to fade
+function linger(t) {
+  clearTimeout(lingering.get(t.id));
+  lingering.set(t.id, setTimeout(() => {
+    const li = document.getElementById("task-" + t.id);
+    if (li) leaving.set(t.id, li.offsetHeight);
+    render();
+    lingering.set(t.id, setTimeout(() => { lingering.delete(t.id); leaving.delete(t.id); render(); }, LEAVE_MS));
+  }, LINGER_MS));
 }
-// "Do it for me": a slip under the task for optional notes, then an agent chat opens with the task.
-const delegating = new Set();
+function unlinger(t) { clearTimeout(lingering.get(t.id)); lingering.delete(t.id); leaving.delete(t.id); }
+async function setChecked(t, checked) {
+  const saved = settled(t).then(() => fetch("/api/tasks/" + enc(t.id) + "/check", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ checked }) }));
+  if (checked) {
+    // Let the check mark draw and the task fade before it settles at the bottom.
+    const li = document.getElementById("task-" + t.id);
+    if (li) li.classList.add("completing");
+    linger(t);
+    await new Promise(r => setTimeout(r, COMPLETE_MS));
+    t.checked_at = new Date().toISOString();
+  } else { unlinger(t); delete t.checked_at; }
+  render();
+  // The row already shows the change; reload only to put things right if the save failed.
+  const r = await saved.catch(() => null);
+  if (!r || !r.ok) { showNote("Couldn't save that check-off. Try again."); unlinger(t); await load(); }
+}
+
+// ---- rows
+function dueControl(t, labelText) {
+  const picker = el("input", { type: "date", "aria-label": labelText });
+  picker.value = t.due || "";
+  picker.addEventListener("change", () => setDue(t, picker.value));
+  return el("span", { class: "due-pick" }, el("span", {}, labelText), picker);
+}
+// Every list offers View when there is an original message or a link to open.
+function viewButton(t) {
+  return t.raw || t.has_raw || t.url ? el("button", { type: "button", class: "view-btn", onclick: () => openView(t) }, "View") : null;
+}
+function actions(t) {
+  if (view === "overdue") return el("span", { class: "actions" },
+    dueControl(t, "Set due date"),
+    el("button", { type: "button", onclick: () => snooze([t.id], null) }, "Snooze"),
+    viewButton(t),
+    el("button", { type: "button", class: "nt", onclick: () => dismiss(t) }, "Not a task"));
+  if (view === "snoozed") return el("span", { class: "actions" },
+    el("button", { type: "button", onclick: () => unsnooze(t) }, "Unsnooze"),
+    dueControl(t, "Set due date"),
+    viewButton(t),
+    el("button", { type: "button", class: "nt", onclick: () => dismiss(t) }, "Not a task"));
+  return el("span", { class: "actions" },
+    el("button", { type: "button", class: "snooze", onclick: () => { menuFor = menuFor === t.id ? null : t.id; render(); } }, "Snooze"),
+    dueControl(t, "Date"),
+    viewButton(t),
+    AGENT_OK.test(t.title) ? el("button", { type: "button", class: "agent", onclick: () => { delegating.add(t.id); render(); } }, t.handoff ? "Ask again" : "Do it for me") : null,
+    t.source === "manual"
+      ? el("button", { type: "button", class: "nt", onclick: () => removeTask(t) }, "Delete")
+      : el("button", { type: "button", class: "nt not-task", onclick: () => dismiss(t) }, "Not a task"));
+}
+// On a phone (no hover), tapping a task, anywhere but its text or checkbox, opens View.
+const PHONE = matchMedia("(max-width: 560px)");
+function tapRow(e, t) {
+  if (!PHONE.matches || e.target.closest("button, input, a, .title, .menu, .slip, .actions")) return;
+  openView(t);
+}
+function editableTitle(t) {
+  const n = el("div", { class: "title", contenteditable: "plaintext-only", spellcheck: "true", role: "textbox", "aria-label": "Task" });
+  n.textContent = shownTitle(t);
+  n.addEventListener("keydown", e => {
+    if (e.key === "Enter") { e.preventDefault(); n.blur(); }
+    if (e.key === "Escape") { n.textContent = shownTitle(t); n.blur(); }
+  });
+  n.addEventListener("blur", async () => {
+    const value = n.textContent.replace(/\s+/g, " ").trim();
+    if (value === shownTitle(t)) { n.textContent = shownTitle(t); return; }
+    if (!value) { n.textContent = shownTitle(t); showNote("A task needs a title."); return; }
+    n.textContent = value;
+    await patch(t, { title: value });
+  });
+  return n;
+}
 function delegateSlip(t) {
-  const note = el("textarea", { class: "in note-in", rows: "2", placeholder: "Anything the agent should know? (optional)", "aria-label": "Notes for the agent" });
+  const note = el("textarea", { class: "in", rows: "2", placeholder: "Anything the agent should know? (optional)", "aria-label": "Notes for the agent" });
   const go = async () => {
     const conn = window.shellConnection;
     if (!conn || !conn.isFramed) { showNote("Open TODOOM inside Imbue Studio to hand tasks to an agent."); return; }
-    const r = await fetch("/api/tasks/" + encodeURIComponent(t.id) + "/handoff", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ note: note.value }) });
-    if (!r.ok) { showNote("Couldn't hand that off. Try again."); return; }
-    conn.startWithText((await r.json()).message);
+    const res = await api("POST", "/api/tasks/" + enc(t.id) + "/handoff", { note: note.value });
+    if (!res) return;
+    conn.startWithText(res.message);
     delegating.delete(t.id);
     await load();
   };
   note.addEventListener("keydown", e => { if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) go(); if (e.key === "Escape") { delegating.delete(t.id); render(); } });
   setTimeout(() => note.focus(), 0);
-  return el("div", { class: "delegate" },
-    note,
-    el("div", { class: "form-row" },
-      el("button", { type: "button", class: "btn primary", onclick: go }, "Start agent"),
-      el("button", { type: "button", class: "btn", onclick: () => { delegating.delete(t.id); render(); } }, "Cancel"),
-      el("span", { class: "hint" }, "Opens a chat beside this window. It asks before paying or messaging anyone.")));
+  return el("div", { class: "slip" }, note, el("div", { class: "form-row" },
+    el("button", { type: "button", class: "btn primary", onclick: go }, "Start agent"),
+    el("button", { type: "button", class: "btn", onclick: () => { delegating.delete(t.id); render(); } }, "Cancel"),
+    el("span", { class: "tiny" }, "Opens a chat beside this window. It asks before paying or messaging anyone.")));
 }
 function row(t) {
-  const label = SOURCES[t.source] || t.source;
+  if (removed.has(t.id)) return removedRow(t);
   const checked = !!t.checked_at;
-  const box = el("input", { type: "checkbox", "aria-label": "Done: " + t.title, onchange: () => setChecked(t, box.checked) });
+  const box = el("input", { type: "checkbox", "aria-label": "Done: " + shownTitle(t), onchange: () => setChecked(t, box.checked) });
   box.checked = checked;
-  const right = checked ? el("span", { class: "clears" }, clearsLabel(t)) : dueControl(t);
-  const other = t.tab === "work" ? "personal" : "work";
-  return el("li", { class: "task" + (checked ? " checked" : ""), id: "task-" + t.id, "data-source": t.source },
-    box,
-    el("div", {}, editable(t, "title", "title", "Task"), editable(t, "why", "why", "Add a note")),
-    right,
-    delegating.has(t.id) ? delegateSlip(t) : null,
-    el("div", { class: "meta" },
-      el("span", { class: "src" }, el("b", {}, label), (t.from ? " · " + t.from : "") + (fmtDate(t.date) ? " · " + fmtDate(t.date) : "")),
-      t.edited ? el("span", { class: "flag" }, "Edited") : null,
-      t.stale ? el("span", { class: "flag warn", title: "Your Mac was offline at the last refresh" }, "Out of date") : null,
-      t.handoff ? el("span", { class: "flag agent", title: "Handed to an agent " + fmtDate(t.handoff.at) }, "Agent on it") : null,
-      t.url ? el("a", { class: "lnk", href: t.url, target: "_blank", rel: "noopener" }, (t.source_url && t.url !== t.source_url) || ["text", "manual"].includes(t.source) ? "Open link ↗" : "Open in " + label + " ↗") : null,
-      t.raw ? el("button", { type: "button", class: "lnk view-original", onclick: () => openPanel(t) }, t.context ? "View conversation" : "View original") : null,
-      checked ? null : el("button", { type: "button", class: "lnk do-it", onclick: () => { delegating.add(t.id); render(); } }, t.handoff ? "Ask again" : "Do it for me"),
-      el("span", { class: "row-actions" },
-        el("button", { type: "button", class: "lnk move", onclick: () => patch(t, { tab: other }) }, "Move to " + (other === "work" ? "Work" : "Personal")),
-        t.edited ? el("button", { type: "button", class: "lnk", onclick: () => resetTask(t) }, "Undo edits") : null,
-        t.source === "manual" ? el("button", { type: "button", class: "lnk danger", onclick: () => removeTask(t) }, "Delete")
-          : el("button", { type: "button", class: "lnk danger not-task", title: "Remove it, and skip tasks like it in future", onclick: () => dismiss(t) }, "Not a task"),
-      ),
-    ),
-  );
+  let [chip, kind] = checked ? ["", ""] : chipText(t);
+  if (!chip && t.handoff && !checked) [chip, kind] = ["Agent on it", "agent-on"];
+  return el("li", { class: "task" + (checked ? " checked" : "") + (["overdue", "snoozed"].includes(view) ? " decide" : "") + (leaving.has(t.id) ? " leaving" : ""), style: leaving.has(t.id) ? "--h:" + leaving.get(t.id) + "px" : "", id: "task-" + t.id, "data-id": t.id, "data-source": t.source, onclick: e => tapRow(e, t) },
+    box, editableTitle(t), el("span", { class: "chip " + kind }, chip),
+    checked ? el("span", { class: "actions" }) : actions(t),
+    menuFor === t.id ? el("div", { class: "menu" },
+      el("button", { type: "button", onclick: () => snooze([t.id], addDays(1)) }, "Tomorrow"),
+      el("button", { type: "button", onclick: () => snooze([t.id], addDays(7)) }, "Next week"),
+      el("button", { type: "button", onclick: () => snooze([t.id], null) }, "No deadline")) : null,
+    delegating.has(t.id) ? delegateSlip(t) : null);
 }
-// Text you edit in place: click to type, Enter or clicking away saves, Escape puts it back.
-function editable(t, field, cls, placeholder) {
-  const n = el("div", { class: cls + " live", contenteditable: "plaintext-only", spellcheck: "true", "data-placeholder": placeholder, "aria-label": placeholder, role: "textbox" });
-  n.textContent = t[field] || "";
-  const original = () => t[field] || "";
-  n.addEventListener("keydown", e => {
-    if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); n.blur(); }
-    if (e.key === "Escape") { n.textContent = original(); n.blur(); }
+const SLIP_MS = 30000, SLIP_SAVED_MS = 0, SLIP_FADE_MS = 1500;  // saved: fade right away
+function dropSlip(id) { removed.delete(id); render(); }
+function removedRow(t) {
+  const info = removed.get(t.id);
+  const reason = el("input", { class: "in", placeholder: "Why isn't this a task? (optional, helps it learn)", "aria-label": "Why this isn't a task" });
+  reason.value = info.reason || "";
+  // The countdown waits while you type, and starts over when you click away.
+  reason.addEventListener("focus", () => { info.paused = true; });
+  reason.addEventListener("blur", () => { if (!info.saved) { info.paused = false; info.deadline = Date.now() + SLIP_MS; } });
+  reason.addEventListener("input", () => { info.reason = reason.value; });
+  const save = async () => {
+    const r = reason.value.trim();
+    if (await api("PATCH", "/api/tasks/" + enc(t.id) + "/dismiss", { reason: r })) {
+      info.reason = r; info.saved = true; info.paused = false; info.deadline = Date.now() + SLIP_SAVED_MS; render();
+    }
+  };
+  reason.addEventListener("keydown", e => { if (e.key === "Enter") save(); if (e.key === "Escape") dropSlip(t.id); });
+  return el("li", { class: "removed-row" + (info.fading ? " fading" : ""), id: "removed-" + t.id },
+    el("div", { class: "removed-head" },
+      el("span", { class: "label" }, "Removed"), el("span", { class: "removed-title" }, shownTitle(t)),
+      el("button", { type: "button", class: "lnk", onclick: () => undismiss(t) }, "Undo"),
+      el("button", { type: "button", class: "lnk", "aria-label": "Close", onclick: () => dropSlip(t.id) }, "×")),
+    info.saved
+      ? el("div", { class: "tiny" }, info.reason ? "Noted: “" + info.reason + "”. Future refreshes will skip tasks like this." : "Future refreshes will skip tasks like this.")
+      : el("div", { class: "form-row" }, reason, el("button", { type: "button", class: "btn", onclick: save }, "Save")));
+}
+setInterval(() => {
+  removed.forEach((info, id) => {
+    if (info.fading || info.paused || Date.now() < info.deadline) return;
+    info.fading = true;
+    const li = document.getElementById("removed-" + id);
+    if (li) li.classList.add("fading");
+    setTimeout(() => { if (removed.get(id) === info) dropSlip(id); }, SLIP_FADE_MS);
   });
-  n.addEventListener("blur", async () => {
-    const value = n.textContent.replace(/\s+/g, " ").trim();
-    if (value === original()) { n.textContent = original(); return; }
-    if (field === "title" && !value) { n.textContent = original(); showNote("A task needs a title."); return; }
-    n.textContent = value;
-    await patch(t, { [field]: value });
-  });
-  return n;
-}
-// The due date: click it (or "Add due date") to pick a date; clearing the picker removes it.
-function dueControl(t) {
-  const picker = el("input", { type: "date", class: "date-picker", "aria-label": "Due date", tabindex: "-1" });
-  picker.value = t.due || "";
-  picker.addEventListener("change", () => patch(t, { due: picker.value || null }));
-  const open = () => { try { picker.showPicker(); } catch { picker.focus(); } };
-  const btn = t.due
-    ? el("button", { type: "button", class: "due" + (dueSoon(t.due) ? " soon" : ""), onclick: open, title: "Change due date" }, dueLabel(t.due))
-    : el("button", { type: "button", class: "due add-due", onclick: open }, "+ Due date");
-  return el("span", { class: "due-wrap" }, btn, picker);
-}
-async function api(method, url, body) {
-  const r = await fetch(url, { method, headers: { "Content-Type": "application/json" }, body: body ? JSON.stringify(body) : undefined });
-  if (!r.ok) { const e = await r.json().catch(() => ({})); showNote(e.error ? "Couldn't save: " + e.error + "." : "Couldn't save that. Try again."); return false; }
-  showNote(""); return true;
-}
-async function patch(t, fields) {
-  Object.assign(t, fields);
-  if (await api("PATCH", "/api/tasks/" + encodeURIComponent(t.id), fields)) await load();
-}
-async function removeTask(t) {
-  if (!confirm("Delete “" + t.title + "”?")) return;
-  if (await api("DELETE", "/api/tasks/" + encodeURIComponent(t.id))) await load();
-}
-async function resetTask(t) {
-  if (await api("DELETE", "/api/tasks/" + encodeURIComponent(t.id) + "/edit")) await load();
-}
+}, 500);
+function newTaskId() { return "manual-" + Array.from(crypto.getRandomValues(new Uint8Array(6)), b => b.toString(16).padStart(2, "0")).join(""); }
 // Type a task and press Enter; the box stays ready for the next one.
 function addRow(tab) {
   const input = el("input", { class: "add-in", placeholder: "+ Add a task", "aria-label": "Add a task to " + tab, id: "add-" + tab });
@@ -400,20 +522,215 @@ function addRow(tab) {
     if (e.key !== "Enter" || !input.value.trim()) return;
     const title = input.value.trim();
     input.value = "";
-    if (await api("POST", "/api/tasks", { title, tab })) { await load(); document.getElementById("add-" + tab).focus(); }
+    // The task shows at once; the save runs behind it and is undone if it fails.
+    const task = { id: newTaskId(), source: "manual", from: null, url: null, why: "", due: null, title, tab, date: new Date().toISOString(), raw: null, has_raw: false };
+    DATA.tasks.push(task);
+    render();
+    const again = document.getElementById("add-" + tab); if (again) again.focus();
+    task.saving = api("POST", "/api/tasks", { id: task.id, title, tab });
+    if (!(await task.saving)) { DATA.tasks = DATA.tasks.filter(x => x !== task); render(); }
   });
   return el("li", { class: "add-row" }, input);
 }
-function byDue(a, b) { const x = a.due || "9", y = b.due || "9"; return x < y ? -1 : x > y ? 1 : 0; }
-// Search matches every word typed, in any order, against what a task shows:
-// title, note, who it's from, where it came from, and the email subject. Like
-// Spotlight, a word matches the start of a word ("cas" finds "Casey").
+
+// ---- the page
+function renderNav() {
+  const item = (v, name, cls = "") => el("button", { type: "button", class: "view " + cls, "data-v": v, "aria-current": String(view === v), onclick: () => { view = v; menuFor = null; render(); document.getElementById("list").scrollTop = 0; } },
+    el("span", {}, name), el("span", { class: "n" }, String(count(v))));
+  document.getElementById("nav").replaceChildren(
+    item("today", "Today"), item("personal", "Personal"), item("work", "Work"),
+    el("div", { class: "navsep" }),
+    item("overdue", "Overdue", count("overdue") ? "warn" : ""), item("snoozed", "Snoozed"),
+    // On narrow screens the quiet sidebar link becomes the last tab.
+    el("button", { type: "button", class: "view recaptab", "aria-current": String(view === "recap"), onclick: openRecap }, el("span", {}, "Recap")));
+}
+// On narrow screens Today shows one half at a time; these tabs pick which.
+function todayTabs() {
+  return el("div", { class: "todaytabs", role: "tablist" }, ...TABS.map(tab => el("button", { type: "button", class: "todaytab", role: "tab", "aria-selected": String(todayTab === tab),
+    onclick: () => { todayTab = tab; render(); } }, tab === "work" ? "Work" : "Personal")));
+}
+// Fill a container, skipping the empty slots (a bare replaceChildren prints "null" for them).
+function put(node, ...kids) { node.replaceChildren(...kids.filter(k => k != null)); }
+function render() {
+  renderNav();
+  const list = document.getElementById("list");
+  const head = (h, sub, right) => el("div", { class: "listhead" }, el("h1", {}, h), sub ? el("span", { class: "sub" }, sub) : null, right ? el("span", { class: "right" }, right) : null);
+  document.getElementById("open-recap").setAttribute("aria-current", String(view === "recap"));
+  if (view === "recap") { renderRecap(list, head); return; }
+  if (view === "today") {
+    const cols = TABS.map(tab => listFor("today", tab));
+    const date = new Date().toLocaleDateString(undefined, { weekday: "long", month: "short", day: "numeric" });
+    if (cols.every(c => !c.some(stays)) && !removed.size) {
+      const tomorrow = DATA.tasks.filter(t => isOpen(t) && lateDays(t) === -1).length;
+      put(list, head("Today", date), el("div", { class: "finish" }, el("h2", {}, "Done for today."), el("p", {}, (tomorrow || "Nothing") + " due tomorrow. Go touch grass.")),
+        todayTabs(), el("div", { class: "split", "data-tab": todayTab }, ...TABS.map((tab, i) => el("div", { "data-col": tab }, el("ul", {}, addRow(tab), ...cols[i].map(row))))));
+      return;
+    }
+    put(list, head("Today", date), todayTabs(), el("div", { class: "split", "data-tab": todayTab }, ...TABS.map((tab, i) => el("div", { "data-col": tab },
+      el("div", { class: "colhead" }, el("h2", {}, tab === "work" ? "Work" : "Personal")),
+      el("ul", {}, addRow(tab), ...cols[i].map(row)),
+      cols[i].some(stays) ? null : el("div", { class: "clear" }, "All clear here.")))));
+    return;
+  }
+  const items = listFor(view);
+  if (view === "personal" || view === "work") {
+    put(list, head(view === "work" ? "Work" : "Personal"), el("ul", {}, addRow(view), ...items.map(row)));
+    return;
+  }
+  if (view === "overdue") {
+    const open = items.map(t => t.id);
+    put(list, head("Overdue", "The doomiest of doom. Snooze em or lose em.", open.length ? el("button", { type: "button", class: "btn", onclick: () => snooze(open, null) }, "Snooze em all") : null),
+      el("ul", {}, ...items.map(row)), items.length ? null : el("div", { class: "clear" }, "Nothing overdue."));
+    return;
+  }
+  put(list, head("Snoozed", "Back on Today when their day comes. No deadline waits here until you pick it up."),
+    el("ul", {}, ...items.map(row)), items.length ? null : el("div", { class: "clear" }, "Nothing snoozed."));
+}
+
+// ---- Weekly recap: the work you checked off, one week (Monday to Sunday) at a time
+let RECAP = [], recapWeek = null;
+function weekOf(d) { const x = new Date(d); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - (x.getDay() + 6) % 7); return x; }
+function plusDays(d, n) { const x = new Date(d); x.setDate(x.getDate() + n); return x; }
+const short = d => d.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+async function openRecap() {
+  const r = await fetch("/api/recap");
+  if (!r.ok) { showNote("Couldn't load your recap. Try again."); return; }
+  RECAP = (await r.json()).done;
+  view = "recap"; menuFor = null;
+  // Opens on this week, or on last week while this one is still empty (a Monday morning).
+  const now = weekOf(new Date());
+  if (!recapWeek) recapWeek = RECAP.some(t => +weekOf(t.checked_at) === +now) ? now : plusDays(now, -7);
+  render(); document.getElementById("list").scrollTop = 0;
+}
+function recapText(start, items) {
+  return "Week of " + short(start) + " – " + short(plusDays(start, 6)) + "\n" + items.map(t => "- " + shownTitle(t)).join("\n");
+}
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch (e) { /* blocked in some frames; fall back below */ }
+  const area = el("textarea", { style: "position:fixed;opacity:0" }); area.value = text; document.body.append(area); area.select();
+  const ok = document.execCommand("copy"); area.remove(); return ok;
+}
+function renderRecap(list, head) {
+  const start = recapWeek, end = plusDays(start, 7), thisWeek = weekOf(new Date());
+  const items = RECAP.filter(t => { const d = new Date(t.checked_at); return d >= start && d < end; });
+  const first = RECAP.length ? weekOf(RECAP[0].checked_at) : thisWeek;
+  const go = n => { recapWeek = plusDays(start, 7 * n); render(); };
+  const copy = el("button", { type: "button", class: "btn", onclick: async () => {
+    copy.textContent = (await copyText(recapText(start, items))) ? "Copied" : "Couldn't copy";
+    setTimeout(() => { copy.textContent = "Copy"; }, 1500);
+  } }, "Copy");
+  if (!items.length) copy.disabled = true;
+  const nav = el("span", { class: "weeknav" },
+    el("button", { type: "button", class: "btn icon", "aria-label": "Previous week", onclick: () => go(-1) }, "‹"),
+    el("button", { type: "button", class: "btn icon", "aria-label": "Next week", onclick: () => go(1) }, "›"),
+    copy);
+  nav.children[0].disabled = start <= first;
+  nav.children[1].disabled = start >= thisWeek;
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    const day = plusDays(start, i), next = plusDays(day, 1);
+    const on = items.filter(t => { const d = new Date(t.checked_at); return d >= day && d < next; });
+    if (on.length) days.push(el("div", { class: "recap-day" }, day.toLocaleDateString(undefined, { weekday: "short", month: "short", day: "numeric" })),
+      ...on.map(t => el("button", { type: "button", class: "recap-item", "data-id": t.id, onclick: () => openView(t) },
+        el("span", { class: "rt" }, shownTitle(t)),
+        el("span", { class: "rm" }, t.source === "manual" ? "Added by you" : [t.from, SOURCES[t.source] || t.source].filter(Boolean).join(" · ")))));
+  }
+  put(list, head("Recap", short(start) + " – " + short(plusDays(start, 6)) + " · " + items.length + " work " + (items.length === 1 ? "task" : "tasks") + " done", nav),
+    ...days, items.length ? null : el("div", { class: "clear" }, "Nothing checked off at work this week."));
+}
+document.getElementById("open-recap").onclick = openRecap;
+
+// ---- View: the original message, with a way out to where it lives
+function rawText(t) {
+  const r = t.raw || {};
+  if (t.source === "email") return r.body || r.snippet || "";
+  if (t.source === "google-docs" && r.comment) return "On: “" + ((r.comment.quotedFileContent || {}).value || "") + "”\n\n" + r.comment.author.displayName + ": " + r.comment.content + (r.comment.replies || []).map(x => "\n\n" + x.author.displayName + ": " + x.content).join("");
+  if (t.source === "notion") return String(r["Write a task"] || "").replace(/<[^>]+>/g, "").trim() + (r.Day ? "\n\nDay: " + r.Day : "");
+  return r.text || "";
+}
+// Slack stores links as <url|label> and mentions as <@U123> / <#C123|name>; show them as people read them.
+function slackNodes(text) {
+  const out = []; let last = 0;
+  const re = /<(https?:[^|>]+)(?:\|([^>]+))?>|<#[A-Z0-9]+(?:\|([^>]+))?>|<@[A-Z0-9]+(?:\|([^>]+))?>|<!(\w+)[^>]*>/g;
+  for (const m of text.matchAll(re)) {
+    out.push(text.slice(last, m.index));
+    if (m[1]) out.push(el("a", { class: "lnk", href: m[1], target: "_blank", rel: "noopener" }, m[2] || m[1]));
+    else out.push(m[3] ? "#" + m[3] : m[4] ? "@" + m[4] : m[5] ? "@" + m[5] : m[0].startsWith("<@") ? "@someone" : "#channel");
+    last = m.index + m[0].length;
+  }
+  out.push(text.slice(last));
+  return out;
+}
+function squash(x) { return String(x || "").toLowerCase().replace(/<[^>]*>|https?:\S+/g, "").replace(/[^a-z0-9]+/g, " ").trim(); }
+// The list leaves out each task's original message; fetch it the first time it is viewed.
+async function openView(t) {
+  if (t.has_raw && !t.raw) {
+    const r = await fetch("/api/tasks/" + enc(t.id) + "/raw").catch(() => null);
+    if (r && r.ok) t.raw = (await r.json()).raw;
+    else showNote("Couldn't load the original message.");
+  }
+  const src = SOURCES[t.source] || t.source;
+  document.getElementById("v-src").textContent = src;
+  document.getElementById("v-sub").textContent = [t.from, when(t)].filter(Boolean).join(" · ");
+  document.getElementById("v-title").textContent = t.source === "email" && t.raw && t.raw.subject ? t.raw.subject : shownTitle(t);
+  // The "why" line often just quotes the message shown below it; skip it then.
+  const quoted = ((t.why || "").match(/"([^"]+)"/) || [, t.why || ""])[1];
+  const repeats = squash(quoted).length > 12 && squash(rawText(t) + " " + (t.context || []).map(m => m.text).join(" ")).includes(squash(quoted).slice(0, 40));
+  document.getElementById("v-why").textContent = repeats ? "" : (t.why || "");
+  const body = document.getElementById("v-body");
+  if (t.context) {
+    body.className = "chat";
+    body.replaceChildren(...t.context.map(m => el("div", { class: "msg" + (m.who === "You" ? " me" : "") + (m.this ? " this" : "") },
+      el("div", { class: "who" }, m.who + " · " + new Date(m.date).toLocaleString(undefined, { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })),
+      el("div", { class: "bubble" }, ...(t.source === "slack" ? slackNodes(m.text || "") : [m.text])))));
+  } else {
+    body.className = "rawbody";
+    const text = rawText(t) || "Nothing more to show for this one.";
+    if (t.source === "slack") body.replaceChildren(...slackNodes(text)); else body.textContent = text;
+  }
+  const also = document.getElementById("v-also");
+  also.replaceChildren(...(t.also_from || []).map(a => el("div", {}, "Also from " + (SOURCES[a.source] || a.source) + (a.from ? " · " + a.from : ""))));
+  also.hidden = !(t.also_from || []).length;
+  const go = document.getElementById("v-open");
+  go.hidden = !t.url;
+  viewActs(t);
+  if (t.url) { go.href = t.url; go.textContent = ((t.source_url && t.url !== t.source_url) || ["text", "manual"].includes(t.source) ? "Open link" : "Open in " + src) + " ↗"; }
+  document.body.classList.add("viewing");
+}
+function closeView() { document.body.classList.remove("viewing"); }
+function viewActs(t, snoozing = false) {
+  const box = document.getElementById("v-acts");
+  const act = fn => async () => { closeView(); await fn(); };
+  if (t.checked_at && view === "recap") { box.replaceChildren(); return; }
+  if (t.checked_at) {
+    box.replaceChildren(el("button", { type: "button", onclick: act(() => setChecked(t, false)) }, "Mark not done"));
+    return;
+  }
+  if (snoozing) {
+    box.replaceChildren(el("span", { class: "tiny" }, "Snooze:"),
+      el("button", { type: "button", onclick: act(() => snooze([t.id], addDays(1))) }, "Tomorrow"),
+      el("button", { type: "button", onclick: act(() => snooze([t.id], addDays(7))) }, "Next week"),
+      el("button", { type: "button", onclick: act(() => snooze([t.id], null)) }, "No deadline"),
+      el("button", { type: "button", class: "nt", onclick: () => viewActs(t) }, "Cancel"));
+    return;
+  }
+  const date = dueControl(t, t.due ? "Change date" : "Set date");
+  date.querySelector("input").addEventListener("change", closeView);
+  put(box,
+    isSnoozed(t) ? el("button", { type: "button", onclick: act(() => unsnooze(t)) }, "Unsnooze")
+      : el("button", { type: "button", class: "v-snooze", onclick: () => viewActs(t, true) }, "Snooze"),
+    date,
+    AGENT_OK.test(t.title) ? el("button", { type: "button", class: "agent", onclick: () => { closeView(); delegating.add(t.id); render(); } }, t.handoff ? "Ask again" : "Do it for me") : null,
+    t.source === "manual" ? el("button", { type: "button", class: "nt", onclick: act(() => removeTask(t)) }, "Delete")
+      : el("button", { type: "button", class: "nt", onclick: act(() => dismiss(t)) }, "Not a task"));
+}
+document.getElementById("v-close").onclick = closeView;
+
+// ---- Search: Option-Space or the sidebar box
 function words(q) { return q.toLowerCase().split(/\s+/).filter(Boolean); }
 function escapeRe(w) { return w.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"); }
 function wordStart(w) { return (/^\w/.test(w) ? "\\b" : "") + escapeRe(w); }
-function haystack(t) {
-  return [t.title, t.why, t.from, SOURCES[t.source] || t.source, t.tab, t.raw && t.raw.subject].filter(Boolean).join(" \n ");
-}
+function haystack(t) { return [shownTitle(t), t.title, t.why, t.from, SOURCES[t.source], t.tab, t.raw_subject || (t.raw && t.raw.subject)].filter(Boolean).join(" \n "); }
 function matches(t, ws) { const h = haystack(t); return ws.every(w => new RegExp(wordStart(w), "i").test(h)); }
 function highlight(text, ws) {
   text = text || "";
@@ -421,99 +738,113 @@ function highlight(text, ws) {
   const re = new RegExp("(" + ws.map(wordStart).join("|") + ")", "ig");
   return text.split(re).map((part, i) => i % 2 ? el("mark", {}, part) : part);
 }
-function render() {
-  const ws = words(document.getElementById("search").value);
-  TABS.forEach(tab => {
-    const col = document.getElementById("col-" + tab);
-    const mine = DATA.tasks.filter(t => t.tab === tab && (!ws.length || matches(t, ws)));
-    const open = mine.filter(t => !t.checked_at).sort(byDue);
-    const done = mine.filter(t => t.checked_at).sort((a, b) => a.checked_at < b.checked_at ? 1 : -1);
-    document.getElementById("count-" + tab).textContent = open.length + (ws.length ? " matching" : " open");
-    document.getElementById("tabcount-" + tab).textContent = open.length;
-    document.getElementById("tab-" + tab).setAttribute("aria-selected", String(document.body.dataset.tab === tab));
-    const ol = col.querySelector(".open-list");
-    const slips = [...removed.values()].filter(r => r.task.tab === tab).map(r => removedRow(r.task));
-    ol.replaceChildren(addRow(tab), ...slips, ...open.map(row));
-    if (!open.length) ol.append(el("li", { class: "empty" }, ws.length ? "No open tasks match." : "Nothing outstanding."));
-    col.querySelector(".done-list").replaceChildren(...done.map(row));
-    col.querySelector(".done-head").hidden = !done.length;
-  });
+const spot = { items: [], sel: 0 };
+const spotIn = document.getElementById("spot-in");
+function isSpotKey(e) { return e.altKey && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.code === "Space"; }
+let spotReturn = null;
+function openSpot() {
+  spotReturn = document.activeElement;
+  document.body.classList.add("spotting");
+  spotIn.value = ""; spot.sel = 0; spotSearch();
+  spotIn.focus();
 }
-function openPanel(t) {
-  document.getElementById("panel-src").textContent = SOURCES[t.source];
-  document.getElementById("panel-sub").textContent = [t.from, fmtDate(t.date)].filter(Boolean).join(" · ");
-  document.getElementById("panel-title").textContent = t.source === "email" ? t.raw.subject : t.title;
-  const body = document.getElementById("panel-body");
-  if (t.context) {
-    body.className = "chat";
-    body.replaceChildren(...t.context.map(m => el("div", { class: "msg" + (m.who === "You" ? " me" : "") + (m.this ? " this" : "") },
-      el("div", { class: "who" }, m.who + " · " + fmtDate(m.date) + " " + new Date(m.date).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })),
-      el("div", { class: "bubble" }, m.text))));
-  } else {
-    body.className = "rawbody";
-    body.textContent = rawText(t);
-  }
-  const go = document.getElementById("panel-go");
-  go.parentElement.hidden = !t.url;
-  go.textContent = (t.source_url && t.url !== t.source_url) || t.source === "text" ? "Open link ↗" : "Open in " + SOURCES[t.source] + " ↗";
-  go.href = t.url || "#";
-  document.getElementById("panel-raw").textContent = JSON.stringify(t.raw, null, 2);
-  const also = document.getElementById("panel-also");
-  also.replaceChildren(...(t.also_from || []).map(a => el("div", {}, "Also from " + (SOURCES[a.source] || a.source) + (a.from ? " · " + a.from : "") + " ",
-    a.url ? el("a", { class: "lnk", href: a.url, target: "_blank", rel: "noopener" }, "Open ↗") : null)));
-  also.hidden = !(t.also_from || []).length;
-  document.body.classList.add("open");
+function closeSpot() {
+  if (!document.body.classList.contains("spotting")) return;
+  document.body.classList.remove("spotting");
+  spotIn.blur();
+  if (spotReturn && spotReturn !== document.body && document.contains(spotReturn)) spotReturn.focus({ preventScroll: true });
+  spotReturn = null;
 }
-function closePanel() { document.body.classList.remove("open"); }
-document.getElementById("scrim").onclick = closePanel;
-document.getElementById("panel-close").onclick = closePanel;
-document.addEventListener("keydown", e => { if (e.key === "Escape") closePanel(); });
-document.querySelectorAll(".tab").forEach(b => b.onclick = () => { document.body.dataset.tab = b.dataset.tab; render(); });
-const COMPLETE_MS = matchMedia("(prefers-reduced-motion: reduce)").matches ? 0 : 750;
-async function setChecked(t, checked) {
-  const saved = fetch("/api/tasks/" + encodeURIComponent(t.id) + "/check", {
-    method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ checked }),
-  });
-  if (checked) {
-    // Let the check mark draw and the task fade before it moves down to Done.
-    const li = document.getElementById("task-" + t.id);
-    if (li) li.classList.add("completing");
-    await new Promise(r => setTimeout(r, COMPLETE_MS));
-    t.checked_at = new Date().toISOString(); t.clears_at = new Date(Date.now() + 86400000).toISOString();
-  } else {
-    delete t.checked_at; delete t.clears_at;
-  }
-  render();
-  const r = await saved;
-  if (!r.ok) showNote("Couldn't save that check-off. Try again.");
-  await load();
+function homeOf(t) { return isSnoozed(t) ? "snoozed" : isOverdue(t) && !t.checked_at ? "overdue" : t.tab; }
+function spotSearch() {
+  const ws = words(spotIn.value);
+  const list = document.getElementById("spot-list");
+  if (!ws.length) { spot.items = []; put(list, ); return; }
+  const rank = t => { const s = shownTitle(t).toLowerCase(); return ws.reduce((n, w) => n + (s.startsWith(w) ? 4 : new RegExp(wordStart(w)).test(s) ? 3 : 0), t.checked_at ? 0 : 5); };
+  const hits = DATA.tasks.filter(t => matches(t, ws)).sort((a, b) => rank(b) - rank(a) || ((a.date || "") < (b.date || "") ? 1 : -1)).slice(0, 50);
+  const groups = [["Top hit", hits.slice(0, 1)]];
+  const rest = hits.slice(1);
+  TABS.forEach(tab => groups.push([tab === "work" ? "Work" : "Personal", rest.filter(t => t.tab === tab && !t.checked_at)]));
+  groups.push(["Done", rest.filter(t => t.checked_at)]);
+  spot.items = groups.flatMap(([, ts]) => ts);
+  spot.sel = Math.min(spot.sel, Math.max(0, spot.items.length - 1));
+  if (!hits.length) { put(list, el("div", { class: "spot-empty" }, "No tasks match “" + spotIn.value.trim() + "”.")); return; }
+  let i = 0;
+  put(list, ...groups.filter(([, ts]) => ts.length).flatMap(([name, ts]) => [
+    el("div", { class: "spot-group label" }, name),
+    ...ts.map(t => {
+      const n = i++;
+      return el("div", { class: "spot-item" + (t.checked_at ? " done" : ""), role: "option", id: "spot-" + n, "aria-selected": String(n === spot.sel),
+        onmousemove: () => { if (spot.sel !== n) { spot.sel = n; markSpot(); } }, onclick: () => goTo(t) },
+        el("span", { class: "st" }, highlight(shownTitle(t), ws)),
+        el("span", { class: "ss" }, [SOURCES[t.source], t.from].filter(Boolean).join(" · ")));
+    })]));
+  markSpot();
 }
-function showNote(text) { document.getElementById("notes").textContent = text; }
-function fmtUpdated(iso) {
-  if (!iso) return "Not updated yet";
-  const d = new Date(iso), today = new Date();
-  const time = d.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
-  return "Updated " + (d.toDateString() === today.toDateString() ? "today " + time : d.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " " + time);
+function markSpot() {
+  document.querySelectorAll(".spot-item").forEach((n, i) => n.setAttribute("aria-selected", String(i === spot.sel)));
+  const cur = document.getElementById("spot-" + spot.sel);
+  if (cur) { cur.scrollIntoView({ block: "nearest" }); spotIn.setAttribute("aria-activedescendant", cur.id); }
 }
+// Jump to a task: open the list it lives in, scroll to it and flash it.
+function goTo(t) {
+  spotReturn = null; closeSpot();
+  view = homeOf(t); render();
+  const li = document.getElementById("task-" + t.id);
+  if (!li) { openView(t); return; }
+  li.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
+  li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
+}
+spotIn.addEventListener("input", () => { spot.sel = 0; spotSearch(); });
+spotIn.addEventListener("keydown", e => {
+  if (isSpotKey(e)) return;
+  if (e.key === "ArrowDown") { e.preventDefault(); spot.sel = Math.min(spot.sel + 1, spot.items.length - 1); markSpot(); }
+  else if (e.key === "ArrowUp") { e.preventDefault(); spot.sel = Math.max(spot.sel - 1, 0); markSpot(); }
+  else if (e.key === "Enter") {
+    e.preventDefault();
+    const t = spot.items[spot.sel];
+    if (!t) return;
+    if ((e.metaKey || e.ctrlKey) && (t.raw || t.has_raw || t.url)) { spotReturn = null; closeSpot(); openView(t); } else goTo(t);
+  } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeSpot(); }
+});
+document.getElementById("open-search").onclick = openSpot;
+document.getElementById("scrim").onclick = () => { closeSpot(); closeView(); };
+// The one shortcut: Option-Space opens search (capture phase, so it works while typing in a task).
+document.addEventListener("keydown", e => {
+  if (!isSpotKey(e)) return;
+  e.preventDefault(); e.stopPropagation();
+  if (document.body.classList.contains("spotting")) closeSpot(); else openSpot();
+}, true);
+document.addEventListener("keydown", e => {
+  if (e.key !== "Escape") return;
+  closeView();
+  if (menuFor) { menuFor = null; render(); }
+});
+document.addEventListener("click", e => { if (menuFor && !e.target.closest(".menu, .snooze")) { menuFor = null; render(); } });
+
+// ---- loading, status, refresh, theme
+let LONG_NOTE = "";
 let pendingRender = false;
 function isTyping() {
   const a = document.activeElement;
-  return a && (a.isContentEditable || a.classList.contains("add-in") || a.classList.contains("reason") || a.classList.contains("note-in")) && (a.isContentEditable || a.value);
+  return a && (a.isContentEditable || (a.matches("input.add-in, input.in, textarea.in") && a.value) || a === spotIn);
 }
 document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !isTyping()) { pendingRender = false; load(); } }, 0));
 async function load() {
   const r = await fetch("/api/tasks");
   if (!r.ok) { showNote("Couldn't load your tasks. Try Refresh."); return; }
   DATA = await r.json();
+  const t = DATA.generated ? new Date(DATA.generated) : null;
+  document.getElementById("updated").textContent = t ? "Updated " + (t.toDateString() === new Date().toDateString() ? "" : t.toLocaleDateString(undefined, { month: "short", day: "numeric" }) + " ") + t.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" }) : "";
+  // Texts and WhatsApp catch up on their own once the Mac is awake, so only a
+  // source that has been out for more than a day is worth a word.
+  const out = Object.entries(DATA.sources || {}).filter(([, v]) => v && v.status === "failed" && (!v.last_ok_at || Date.now() - new Date(v.last_ok_at) > 86400000));
+  LONG_NOTE = out.length ? out.map(([k, v]) => v.label || k).join(", ") + " hasn't updated since yesterday." : "";
+  showNote(LONG_NOTE);
   if (isTyping()) { pendingRender = true; return; }
-  document.getElementById("updated").textContent = fmtUpdated(DATA.generated);
-  // Only sources that failed; one the user turned off ("not-run") is not a problem.
-  const failed = Object.entries(DATA.sources || {}).filter(([, v]) => v && v.status === "failed").map(([k, v]) => v.label || k);
-  showNote(failed.length ? "Couldn't reach " + failed.join(", ") + " last time. Tasks from there may be out of date." : "");
   render();
   if (document.body.classList.contains("spotting")) spotSearch();
 }
-// Square-cornered, pixel-style glyphs to match the design system.
 const SUN_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><rect x="4" y="4" width="6" height="6"/><rect x="6" y="0" width="2" height="2"/><rect x="6" y="12" width="2" height="2"/><rect x="0" y="6" width="2" height="2"/><rect x="12" y="6" width="2" height="2"/><rect x="1.5" y="1.5" width="2" height="2"/><rect x="10.5" y="1.5" width="2" height="2"/><rect x="1.5" y="10.5" width="2" height="2"/><rect x="10.5" y="10.5" width="2" height="2"/></svg>';
 const MOON_ICON = '<svg width="14" height="14" viewBox="0 0 14 14" fill="currentColor" aria-hidden="true"><path d="M5 1h4v2H7v2H5v4h2v2h4v-2h2v3h-2v2H5v-2H3v-2H1V5h2V3h2z"/></svg>';
 function showThemeButton() {
@@ -530,7 +861,6 @@ document.getElementById("theme").onclick = () => {
   showThemeButton();
 };
 showThemeButton();
-// Refresh pulls new tasks from every source; it can take a few minutes.
 async function watchRefresh() {
   const btn = document.getElementById("refresh");
   const r = await fetch("/api/refresh"); if (!r.ok) return;
@@ -550,112 +880,6 @@ document.getElementById("refresh").onclick = async () => {
   setTimeout(watchRefresh, 3000);
 };
 fetch("/api/refresh").then(r => r.json()).then(st => { if (st.running) { document.getElementById("refresh").dataset.was = "running"; watchRefresh(); } });
-
-// The search box at the top: filters both columns as you type; Escape clears it.
-const searchIn = document.getElementById("search");
-searchIn.addEventListener("input", render);
-searchIn.addEventListener("keydown", e => {
-  if (e.key === "Escape") { e.stopPropagation(); searchIn.value = ""; render(); searchIn.blur(); }
-});
-document.getElementById("search-clear").onclick = () => { searchIn.value = ""; render(); searchIn.focus(); };
-
-// Spotlight-style search, opened with Option-Space (and closed with it
-// again, or Escape). Results appear under the box as you type, best first.
-const spot = { items: [], sel: 0 };
-const spotIn = document.getElementById("spot-in");
-function isSpotKey(e) { return e.altKey && !e.shiftKey && !e.metaKey && !e.ctrlKey && e.code === "Space"; }
-let spotReturn = null;
-function openSpot() {
-  spotReturn = document.activeElement;
-  document.body.classList.add("spotting");
-  spotIn.value = searchIn.value;
-  spotSearch();
-  spotIn.focus(); spotIn.select();
-}
-// Closing hands focus back to where it was (unless a jump moves it on).
-function closeSpot() {
-  if (!document.body.classList.contains("spotting")) return;
-  document.body.classList.remove("spotting");
-  spotIn.blur();
-  if (spotReturn && spotReturn !== document.body && document.contains(spotReturn)) spotReturn.focus({ preventScroll: true });
-  spotReturn = null;
-}
-function spotRank(t, ws) {
-  const title = (t.title || "").toLowerCase();
-  let score = 0;
-  ws.forEach(w => { if (title.startsWith(w)) score += 4; else if (new RegExp(wordStart(w)).test(title)) score += 3; });
-  if (!t.checked_at) score += 5;
-  return score;
-}
-function spotSearch() {
-  const ws = words(spotIn.value);
-  const list = document.getElementById("spot-list");
-  if (!ws.length) { spot.items = []; list.replaceChildren(); return; }
-  const hits = DATA.tasks.filter(t => matches(t, ws))
-    .map(t => ({ t, s: spotRank(t, ws) }))
-    .sort((a, b) => b.s - a.s || ((a.t.date || "") < (b.t.date || "") ? 1 : -1))
-    .slice(0, 50).map(h => h.t);
-  // Spotlight-like: a top hit, then the rest grouped by column, done tasks last.
-  const groups = [["Top hit", hits.slice(0, 1)]];
-  const rest = hits.slice(1);
-  TABS.forEach(tab => groups.push([tab === "work" ? "Work" : "Personal", rest.filter(t => t.tab === tab && !t.checked_at)]));
-  groups.push(["Done", rest.filter(t => t.checked_at)]);
-  spot.items = groups.flatMap(([, ts]) => ts);
-  spot.sel = Math.min(spot.sel, Math.max(0, spot.items.length - 1));
-  if (!hits.length) { list.replaceChildren(el("div", { class: "spot-empty" }, "No tasks match “" + spotIn.value.trim() + "”.")); return; }
-  let i = 0;
-  list.replaceChildren(...groups.filter(([, ts]) => ts.length).flatMap(([name, ts]) => [
-    el("div", { class: "spot-group label" }, name),
-    ...ts.map(t => {
-      const n = i++;
-      const label = SOURCES[t.source] || t.source;
-      return el("div", { class: "spot-item" + (t.checked_at ? " done" : ""), role: "option", id: "spot-" + n, "aria-selected": String(n === spot.sel),
-        onmousemove: () => { if (spot.sel !== n) { spot.sel = n; markSpot(); } }, onclick: () => goTo(t) },
-        el("span", { class: "st" }, highlight(t.title, ws)),
-        el("span", { class: "ss" }, [label, t.from, t.due ? dueLabel(t.due) : fmtDate(t.date)].filter(Boolean).join(" · ")),
-        t.why ? el("span", { class: "sw" }, highlight(t.why, ws)) : null);
-    }),
-  ]));
-  markSpot();
-}
-function markSpot() {
-  document.querySelectorAll(".spot-item").forEach((n, i) => n.setAttribute("aria-selected", String(i === spot.sel)));
-  const cur = document.getElementById("spot-" + spot.sel);
-  if (cur) { cur.scrollIntoView({ block: "nearest" }); spotIn.setAttribute("aria-activedescendant", cur.id); }
-}
-// Jump to a task in the list: clear the filter, show its column, scroll to it and flash it.
-function goTo(t) {
-  spotReturn = null;
-  closeSpot();
-  searchIn.value = "";
-  document.body.dataset.tab = t.tab;
-  render();
-  const li = document.getElementById("task-" + t.id);
-  if (!li) return;
-  li.scrollIntoView({ block: "center", behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth" });
-  li.classList.remove("flash"); void li.offsetWidth; li.classList.add("flash");
-  const box = li.querySelector("input[type=checkbox]");
-  if (box) box.focus({ preventScroll: true });
-}
-spotIn.addEventListener("input", () => { spot.sel = 0; spotSearch(); });
-spotIn.addEventListener("keydown", e => {
-  if (isSpotKey(e)) return;
-  if (e.key === "ArrowDown") { e.preventDefault(); spot.sel = Math.min(spot.sel + 1, spot.items.length - 1); markSpot(); }
-  else if (e.key === "ArrowUp") { e.preventDefault(); spot.sel = Math.max(spot.sel - 1, 0); markSpot(); }
-  else if (e.key === "Enter") {
-    e.preventDefault();
-    const t = spot.items[spot.sel];
-    if (!t) return;
-    if ((e.metaKey || e.ctrlKey) && t.raw) { spotReturn = null; closeSpot(); openPanel(t); } else goTo(t);
-  } else if (e.key === "Escape") { e.preventDefault(); e.stopPropagation(); closeSpot(); }
-});
-document.getElementById("spot-scrim").onclick = closeSpot;
-// Capture phase, so the shortcut works even while typing in a task.
-document.addEventListener("keydown", e => {
-  if (!isSpotKey(e)) return;
-  e.preventDefault(); e.stopPropagation();
-  if (document.body.classList.contains("spotting")) closeSpot(); else openSpot();
-}, true);
 load();
 setInterval(load, 5 * 60 * 1000);
 </script>

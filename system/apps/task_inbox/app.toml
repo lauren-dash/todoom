@@ -11,7 +11,7 @@ program = "task-inbox"
 stop_when_no_windows = true
 
 # How update-app boots a throwaway preview of this app: on a free port, over a
-# scratch copy of its data (see .agents/skills/update-app/scripts/preview_app.py).
+# scratch copy of its data (see .agents/skills/update-app/python/update_app_skill/preview_app.py).
 [preview]
 env = {TASK_INBOX_PORT = "{port:main}", TASK_INBOX_HOST = "{host}", TASK_INBOX_DATA_DIR = "{copy:data}"}
 copies = {data = "data/.apps/task-inbox"}
